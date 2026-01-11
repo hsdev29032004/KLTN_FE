@@ -1,0 +1,32 @@
+import { configureStore, combineReducers } from '@reduxjs/toolkit'
+import { createWrapper, HYDRATE } from 'next-redux-wrapper'
+import authReducer from './auth/auth-slice'
+
+const rootReducer = combineReducers({
+  auth: authReducer,
+})
+
+export type RootState = ReturnType<typeof rootReducer>
+
+const reducer = (state: any, action: any) => {
+  if (action.type === HYDRATE) {
+    const nextState = {
+      ...state,
+      ...action.payload,
+    }
+    return nextState
+  } else {
+    return rootReducer(state, action)
+  }
+}
+
+export const makeStore = () =>
+  configureStore({
+    reducer,
+    devTools: true,
+  })
+
+export type AppStore = ReturnType<typeof makeStore>
+export type AppDispatch = AppStore['dispatch']
+
+export const wrapper = createWrapper<AppStore>(makeStore, { debug: false })
