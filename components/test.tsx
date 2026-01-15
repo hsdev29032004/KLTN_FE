@@ -9,7 +9,7 @@ export default function Test() {
   return (
     <>
       <div onClick={handleClick}>
-        {authStore.user}
+        <pre>{JSON.stringify(authStore.user, null, 2)}</pre>
       </div>
     </>
   )

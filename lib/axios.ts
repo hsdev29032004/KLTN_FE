@@ -9,7 +9,7 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor
+// Request interceptor - sẽ được set trong layout.tsx
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     return config;
@@ -24,38 +24,9 @@ axiosInstance.interceptors.response.use(
   (response) => {
     return response;
   },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-
-    if (error.response?.status === 401) {
-      if (!originalRequest._retry) {
-        originalRequest._retry = true;
-
-        try {
-          const refreshResponse = await axios.post(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/refresh-token`,
-            {},
-            {
-              withCredentials: true,
-            }
-          );
-
-          if (refreshResponse.status === 200) {
-            return axiosInstance(originalRequest);
-          }
-        } catch (refreshError) {
-          handleLogout();
-          return Promise.reject(refreshError);
-        }
-      }
-    }
-
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
-
-function handleLogout() {
-  // window.location.href = '/login';
-}
 
 export default axiosInstance;

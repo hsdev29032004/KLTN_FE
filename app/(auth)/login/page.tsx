@@ -12,15 +12,26 @@ import { Input } from "@/components/ui/input"
 import { useAuthStore } from "@/stores/auth/auth-store";
 import Link from "next/link"
 import { FormEvent, useState } from "react";
+import { useRedirect } from "@/hooks/use-redirect";
 
 export default function LoginPage() {
   const authStore = useAuthStore();
+  const redirect = useRedirect();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await authStore.login(email, password);
+    setIsLoading(true);
+    try {
+      const { data } = await authStore.login(email, password);
+      redirect(data?.user);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -53,16 +64,18 @@ export default function LoginPage() {
               Forgot your password?
             </a>
           </div>
-          <Input 
-            id="password" 
-            type="password" 
+          <Input
+            id="password"
+            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required 
+            required
           />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </Button>
         </Field>
         <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
           Or continue with

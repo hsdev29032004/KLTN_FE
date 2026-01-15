@@ -14,8 +14,4 @@ export function redirectMiddleware(request: NextRequest) {
   if (pathname === '/auth/signup') {
     return NextResponse.redirect(new URL('/signup', request.url));
   }
-
-  if (pathname === '/auth/login') {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
 }

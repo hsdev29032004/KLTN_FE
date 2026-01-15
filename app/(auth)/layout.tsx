@@ -18,7 +18,7 @@ export default async function AuthLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies()
-  const theme = cookieStore.get('theme')?.value || 'system'
+  const theme = cookieStore.get('theme')?.value || 'dark'
   const bannerSrc = theme === 'dark' ? '/banner-dark.png' : '/banner.png'
 
   return (

@@ -7,7 +7,7 @@ export const ACTION = {
     EDIT: 'edit',
 } as const;
 
-export const ROLE = {
+export const ROLENAME = {
     ADMIN: 'admin',
     LECTURER: 'lecturer',
     TRAINEES: 'trainees',
@@ -34,5 +34,4 @@ export const COOKIE_SETTINGS = {
 export const THEME = {
     DARK: 'dark',
     LIGHT: 'light',
-    SYSTEM: 'system',
 } as const;
