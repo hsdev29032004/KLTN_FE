@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore, AppStore } from '@/stores/store'
 import { setUser } from '@/stores/auth/auth-slice'
+import { NotificationProvider } from './notification-provider'
 
 export default function ReduxProvider({
   children,
@@ -13,7 +14,7 @@ export default function ReduxProvider({
   initialUser?: any
 }) {
   const storeRef = useRef<AppStore | undefined>(undefined)
-  
+
   if (!storeRef.current) {
     storeRef.current = makeStore()
     if (initialUser) {
@@ -21,5 +22,9 @@ export default function ReduxProvider({
     }
   }
 
-  return <Provider store={storeRef.current!}>{children}</Provider>
+  return (
+    <Provider store={storeRef.current!}>
+      <NotificationProvider>{children}</NotificationProvider>
+    </Provider>
+  )
 }

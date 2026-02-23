@@ -1,0 +1,41 @@
+@use "sass:map";
+
+// Toast types variants map
+$toast-variants: (
+  success: (border: var(--success-border),
+    bg: var(--success),
+    fg: var(--success-foreground),
+  ),
+  error: (border: var(--error-border),
+    bg: var(--error),
+    fg: var(--error-foreground),
+  ),
+  warning: (border: var(--warning-border),
+    bg: var(--warning),
+    fg: var(--warning-foreground),
+  ),
+  info: (border: var(--info-border),
+    bg: var(--info),
+    fg: var(--info-foreground),
+  ),
+);
+
+// Mixin for toast variant styling
+@mixin toast-variant($border, $bg, $fg) {
+  border-color: $border !important;
+  background-color: $bg !important;
+  color: $fg !important;
+
+  [data-icon] {
+    color: $border !important;
+  }
+}
+
+// Generate toast styles for each variant
+@each $type, $colors in $toast-variants {
+  [data-sonner-toast][data-type="#{$type}"] {
+    @include toast-variant(map.get($colors, border),
+      map.get($colors, bg),
+      map.get($colors, fg));
+  }
+}

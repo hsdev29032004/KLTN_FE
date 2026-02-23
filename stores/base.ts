@@ -1,6 +1,7 @@
 // stores/base.ts
 import axios, { AxiosInstance } from "axios";
 import axiosInstance from "@/lib/axios";
+import { showApiNotification } from "@/helpers/notification.helper";
 
 export class Base {
   protected axiosInstance: AxiosInstance;
@@ -19,6 +20,26 @@ export class Base {
         },
         withCredentials: true,
       });
+
+      // Add interceptors for server-side axios instance
+      // Note: Notifications will only show on client-side due to toast limitation
+      this.axiosInstance.interceptors.response.use(
+        (response) => {
+          // Auto show notification for successful responses if message exists
+          // Will be skipped on server-side (SSR)
+          if (response.data?.message) {
+            showApiNotification.fromResponse(response.status, response.data);
+          }
+          return response;
+        },
+        (error) => {
+          // Auto show notification for error responses
+          // Will be skipped on server-side (SSR)
+          showApiNotification.fromError(error);
+          return Promise.reject(error);
+        }
+      );
+
       this.access_token = accessToken || '';
       this.refresh_token = refreshToken || '';
     } else {

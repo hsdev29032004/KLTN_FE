@@ -1,9 +1,11 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import { createWrapper, HYDRATE } from 'next-redux-wrapper'
 import authReducer from './auth/auth-slice'
+import notificationReducer from './notification/notification.slice'
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  notification: notificationReducer,
 })
 
 export type RootState = ReturnType<typeof rootReducer>
