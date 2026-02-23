@@ -1,8 +1,8 @@
 // "use client";
 
 import { CourseCard } from '@/components/landing/course-card';
-import { mockCourses } from '@/constants/mock-courses';
 import { Button } from '@/components/ui/button';
+import { mockCourses } from '@/mock/courses';
 import { ArrowRight, TrendingUp, Award, Users } from 'lucide-react';
 
 export default function Home() {
