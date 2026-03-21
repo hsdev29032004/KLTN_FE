@@ -8,16 +8,20 @@ import type {
 interface CourseState {
   list: CourseListItem[]
   selected: CourseDetailResponse | null
+  purchasedList: CourseListItem[]
   loadingList: boolean
   loadingSelected: boolean
+  loadingPurchasedList: boolean
   error?: string | null
 }
 
 const initialState: CourseState = {
   list: [],
   selected: null,
+  purchasedList: [],
   loadingList: false,
   loadingSelected: false,
+  loadingPurchasedList: false,
   error: null,
 }
 
@@ -47,6 +51,19 @@ export const fetchCourseBySlug = createAsyncThunk(
   }
 )
 
+export const fetchPurchasedCourses = createAsyncThunk(
+  'course/fetchPurchasedCourses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await courseRequest.getPurchasedCourses()
+      const payload = res.data
+      return payload as CourseListItem[]
+    } catch (error) {
+      return rejectWithValue('Fetch purchased courses failed')
+    }
+  }
+)
+
 const courseSlice = createSlice({
   name: 'course',
   initialState,
@@ -59,6 +76,12 @@ const courseSlice = createSlice({
     },
     clearSelected: (state) => {
       state.selected = null
+    },
+    setPurchasedList: (state, action: PayloadAction<CourseListItem[]>) => {
+      state.purchasedList = action.payload
+    },
+    clearPurchasedList: (state) => {
+      state.purchasedList = []
     },
   },
   extraReducers: (builder) => {
@@ -91,8 +114,23 @@ const courseSlice = createSlice({
         state.loadingSelected = false
         state.error = action.payload as string || 'Fetch course failed'
       })
+
+    // fetchPurchasedCourses
+    builder
+      .addCase(fetchPurchasedCourses.pending, (state) => {
+        state.loadingPurchasedList = true
+        state.error = null
+      })
+      .addCase(fetchPurchasedCourses.fulfilled, (state, action: PayloadAction<CourseListItem[]>) => {
+        state.loadingPurchasedList = false
+        state.purchasedList = action.payload
+      })
+      .addCase(fetchPurchasedCourses.rejected, (state, action) => {
+        state.loadingPurchasedList = false
+        state.error = action.payload as string || 'Fetch purchased courses failed'
+      })
   },
 })
 
-export const { setList, setSelected, clearSelected } = courseSlice.actions
+export const { setList, setSelected, clearSelected, setPurchasedList, clearPurchasedList } = courseSlice.actions
 export default courseSlice.reducer

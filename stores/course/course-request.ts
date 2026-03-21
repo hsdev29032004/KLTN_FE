@@ -17,6 +17,12 @@ export class CourseRequest extends Base {
       method: 'GET',
     });
   }
+
+  async getPurchasedCourses(): Promise<{ data: CourseListItem[] }> {
+    return this.request('/api/course/purchased', {
+      method: 'GET',
+    });
+  }
 }
 
 export const courseRequest = new CourseRequest();
