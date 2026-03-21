@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Search, ShoppingCart, Bell, Wallet, Moon, Sun } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Search, ShoppingCart, Bell, Wallet, Moon, Sun } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,13 +10,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { useTheme } from 'next-themes';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth/auth-store';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth/auth-store";
 
 export function LandingHeader() {
   const { theme, setTheme } = useTheme();
@@ -26,24 +26,24 @@ export function LandingHeader() {
   const user = authStore.user;
 
   const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   const handleLogout = async () => {
     try {
       await authStore.logout();
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
-  }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-2 md:px-4 lg:px-8">
@@ -100,7 +100,10 @@ export function LandingHeader() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-9 w-9 rounded-full"
+                  >
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={user.avatar} alt={user.fullName} />
                       <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
@@ -110,27 +113,32 @@ export function LandingHeader() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.fullName}</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user.fullName}
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    Khóa học của tôi
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-courses">Khóa học của tôi</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    Danh sách yêu thích
+                  <DropdownMenuItem asChild>
+                    <Link href="/favorites">Danh sách yêu thích</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    Giỏ hàng
+                  <DropdownMenuItem asChild>
+                    <Link href="/cart">Giỏ hàng</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    Cài đặt tài khoản
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">Cài đặt tài khoản</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={handleLogout}
+                  >
                     Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
