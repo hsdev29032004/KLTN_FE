@@ -1,11 +1,13 @@
-// "use client";
-
-import { CourseCard } from '@/components/landing/course-card';
-import { Button } from '@/components/ui/button';
-import { mockCourses } from '@/mock/courses';
+import { CourseCard } from '@/components/landing/course-card'
+import { Button } from '@/components/ui/button'
 import { ArrowRight, TrendingUp, Award, Users } from 'lucide-react';
+import { useSdk } from '@/hooks/use-my-cookies'
 
-export default function Home() {
+export default async function Home() {
+  const sdk = await useSdk()
+  const coursesRes = await sdk.getListCourses()
+  const courses = coursesRes?.data || []
+
   return (
     <div>
       {/* Hero Section */}
@@ -72,30 +74,13 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {mockCourses.map((course) => (
+            {courses.map((course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>
           <div className="mt-12 text-center">
             <Button size="lg" variant="outline">
               Xem tất cả khóa học
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="border-t bg-muted/50 py-16">
-        <div className="px-4 md:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="mb-4 text-3xl font-bold">
-              Bạn muốn chia sẻ kiến thức?
-            </h2>
-            <p className="mb-8 text-lg text-muted-foreground">
-              Trở thành giảng viên và kiếm thu nhập từ những gì bạn yêu thích
-            </p>
-            <Button size="lg">
-              Bắt đầu giảng dạy ngay
             </Button>
           </div>
         </div>

@@ -56,7 +56,6 @@ export function CourseCard({ course }: CourseCardProps) {
             <span className="text-xl font-bold text-foreground">
               {formatPrice(course.price)}
             </span>
-            <Badge variant="secondary">Bestseller</Badge>
           </div>
         </CardContent>
       </Card>

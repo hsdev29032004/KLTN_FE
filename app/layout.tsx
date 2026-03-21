@@ -31,6 +31,7 @@ export default async function RootLayout({
   children: ReactNode;
 }>) {
   const cookieStore = await cookies();
+  const theme = cookieStore.get('theme')?.value || 'dark';
   const sdk = await useSdk();
 
   let user: User | null = null;
@@ -43,7 +44,6 @@ export default async function RootLayout({
   await useRedirectServer(user);
 
 
-  const theme = cookieStore.get('theme')?.value || 'dark';
 
   return (
     <html lang="en" className={theme} style={{ colorScheme: theme }}>

@@ -8,6 +8,13 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import Link from "next/link"
 
 export function SignupForm({
@@ -30,6 +37,18 @@ export function SignupForm({
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input id="email" type="email" placeholder="m@example.com" required />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="role">Role</FieldLabel>
+          <Select>
+            <SelectTrigger id="role">
+              <SelectValue placeholder="Select your role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="trainee">Trainee (Học viên)</SelectItem>
+              <SelectItem value="lecturer">Lecturer (Giảng viên)</SelectItem>
+            </SelectContent>
+          </Select>
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>

@@ -53,13 +53,6 @@ export function LandingHeader() {
           <span className="text-2xl font-bold text-primary">ONLEARN</span>
         </Link>
 
-        {/* Categories */}
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <Link href="/categories" className="text-muted-foreground hover:text-foreground transition-colors">
-            Danh mục
-          </Link>
-        </nav>
-
         {/* Search */}
         <div className="flex flex-1 items-center gap-2">
           <div className="relative w-full max-w-lg">

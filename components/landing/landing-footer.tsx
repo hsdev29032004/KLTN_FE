@@ -6,7 +6,7 @@ export function LandingFooter() {
   return (
     <footer className="border-t bg-muted/50">
       <div>
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4 py-12 px-2 md:px-4 lg:px-8">
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 py-12 px-2 md:px-4 lg:px-8">
           {/* Quick Links */}
           <div>
             <h4 className="mb-4 font-semibold">Liên kết nhanh</h4>

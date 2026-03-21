@@ -1,4 +1,4 @@
-export interface Lesson {
+export interface ILessonSchema {
     id: string;
     courseId: string;
     name: string;
