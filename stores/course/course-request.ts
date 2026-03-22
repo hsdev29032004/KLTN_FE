@@ -7,20 +7,20 @@ export class CourseRequest extends Base {
   }
 
   async getListCourses(): Promise<{ data: CourseListItem[] }> {
-    return this.request('/api/course', {
-      method: 'GET',
+    return this.request("/api/course", {
+      method: "GET",
     });
   }
 
   async getCourseBySlug(slug: string): Promise<{ data: CourseDetailResponse }> {
     return this.request(`/api/course/${slug}`, {
-      method: 'GET',
+      method: "GET",
     });
   }
 
   async getPurchasedCourses(): Promise<{ data: CourseListItem[] }> {
-    return this.request('/api/course/purchased', {
-      method: 'GET',
+    return this.request("/api/course/my-courses", {
+      method: "GET",
     });
   }
 }

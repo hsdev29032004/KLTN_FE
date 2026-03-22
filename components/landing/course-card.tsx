@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Star, Users } from 'lucide-react';
-import { Course } from '@/types/course.type';
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Star, Users } from "lucide-react";
+import { Course } from "@/types/course.type";
 
 interface CourseCardProps {
   course: Course;
+  href?: string;
 }
 
-export function CourseCard({ course }: CourseCardProps) {
+export function CourseCard({ course, href }: CourseCardProps) {
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
@@ -26,7 +27,7 @@ export function CourseCard({ course }: CourseCardProps) {
   };
 
   return (
-    <Link href={`/courses/${course.slug}`}>
+    <Link href={href || `/courses/${course.slug}`}>
       <Card className="group overflow-hidden transition-all hover:shadow-lg cursor-pointer h-full">
         <div className="relative aspect-video overflow-hidden">
           <img
@@ -45,7 +46,9 @@ export function CourseCard({ course }: CourseCardProps) {
           <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold text-foreground">{course.star}</span>
+              <span className="font-semibold text-foreground">
+                {course.star}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
