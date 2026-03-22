@@ -13,8 +13,8 @@ interface TokenPayload {
 // Redirect sang trang login và xóa cookies
 function redirectToLogin(request: NextRequest, pathname: string, search: string): NextResponse {
   const loginResponse = NextResponse.redirect(new URL('/login', request.url));
-  loginResponse.cookies.delete('accessToken');
-  loginResponse.cookies.delete('refreshToken');
+  loginResponse.cookies.delete('access_token');
+  loginResponse.cookies.delete('refresh_token');
   loginResponse.headers.set('x-pathname', pathname);
   loginResponse.headers.set('x-search', search);
   return loginResponse;

@@ -14,4 +14,8 @@ export function redirectMiddleware(request: NextRequest) {
   if (pathname === '/auth/signup') {
     return NextResponse.redirect(new URL('/signup', request.url));
   }
+
+  if (pathname === '/my-courses') {
+    return NextResponse.redirect(new URL('/my-courses/purchased', request.url));
+  }
 }

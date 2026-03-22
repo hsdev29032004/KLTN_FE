@@ -19,7 +19,7 @@ export class CourseRequest extends Base {
   }
 
   async getPurchasedCourses(): Promise<{ data: CourseListItem[] }> {
-    return this.request("/api/course/my-courses", {
+    return this.request("/api/course/purchased", {
       method: "GET",
     });
   }
