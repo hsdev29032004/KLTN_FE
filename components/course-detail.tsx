@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { Course, ICourseReview, Lesson } from '@/types/course.type';
+import { usePurchaseStore } from '@/stores/purchase/purchase-store';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -26,6 +28,13 @@ export function CourseDetail({
   instructor,
   relatedCourses,
 }: CourseDetailProps) {
+  const purchaseStore = usePurchaseStore()
+  const router = useRouter()
+
+  const handleBuy = async () => {
+    await purchaseStore.addCourseSelected(course.id)
+    router.push('/payment/checkout')
+  }
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -101,7 +110,7 @@ export function CourseDetail({
                   <p className="text-sm text-muted-foreground">Giá hiện tại</p>
                 </div>
 
-                <Button className="mb-3 w-full gap-2" size="lg">
+                <Button onClick={handleBuy} className="mb-3 w-full gap-2" size="lg">
                   <ShoppingCart className="h-5 w-5" />
                   Mua ngay
                 </Button>

@@ -1,6 +1,6 @@
-import { Lesson } from '@/types/lesson.type';
+import type { ILessonSchema } from '@/types/lesson.type';
 
-export const mockLessons: Lesson[] = [
+export const mockLessons: ILessonSchema[] = [
     {
         id: 'a1bc8386-b2d8-480d-ad41-d4b2da939mck',
         name: 'Giới thiệu khóa học',

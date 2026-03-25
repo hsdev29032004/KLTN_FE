@@ -27,9 +27,11 @@ const initialState: CourseState = {
 
 export const fetchCourses = createAsyncThunk(
   'course/fetchCourses',
-  async (_, { rejectWithValue }) => {
+  async (ids: string[] | undefined, { rejectWithValue }) => {
+    console.log(ids, 'ids');
+
     try {
-      const res = await courseRequest.getListCourses()
+      const res = await courseRequest.getListCourses(ids)
       const payload = res.data
       return payload as CourseListItem[]
     } catch (error) {

@@ -18,7 +18,7 @@ export function useCourseStore() {
     selected,
     loadingList,
     error,
-    fetchCourses: () => dispatch(fetchCourses()),
+    fetchCourses: (ids?: string[]) => dispatch(fetchCourses(ids)),
     fetchCourseBySlug: (slug: string) => dispatch(fetchCourseBySlug(slug)),
     fetchPurchasedCourses: () => dispatch(fetchPurchasedCourses()),
     setList: (items: CourseListItem[]) => dispatch(setList(items)),

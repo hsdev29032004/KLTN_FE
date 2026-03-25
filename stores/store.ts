@@ -3,11 +3,13 @@ import { createWrapper, HYDRATE } from 'next-redux-wrapper'
 import authReducer from './auth/auth-slice'
 import notificationReducer from './notification/notification.slice'
 import courseReducer from './course/course-slice'
+import purchaseReducer from './purchase/purchase-slice'
 
 const rootReducer = combineReducers({
   auth: authReducer,
   notification: notificationReducer,
   course: courseReducer,
+  purchase: purchaseReducer,
 })
 
 export type RootState = ReturnType<typeof rootReducer>
