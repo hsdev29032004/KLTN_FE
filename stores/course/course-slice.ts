@@ -27,9 +27,11 @@ const initialState: CourseState = {
 
 export const fetchCourses = createAsyncThunk(
   'course/fetchCourses',
-  async (_, { rejectWithValue }) => {
+  async (ids: string[] | undefined, { rejectWithValue }) => {
+    console.log(ids, 'ids');
+
     try {
-      const res = await courseRequest.getListCourses()
+      const res = await courseRequest.getListCourses(ids)
       const payload = res.data
       return payload as CourseListItem[]
     } catch (error) {
@@ -60,6 +62,19 @@ export const fetchPurchasedCourses = createAsyncThunk(
       return payload as CourseListItem[]
     } catch (error) {
       return rejectWithValue('Fetch purchased courses failed')
+    }
+  }
+)
+
+export const fetchMaterialUrl = createAsyncThunk(
+  'course/fetchMaterialUrl',
+  async (materialId: string, { rejectWithValue }) => {
+    try {
+      const res = await courseRequest.getMaterialUrl(materialId)
+      const payload = res.data.url
+      return payload as string
+    } catch (error) {
+      return rejectWithValue('Fetch material url failed')
     }
   }
 )

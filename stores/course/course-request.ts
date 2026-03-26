@@ -6,10 +6,17 @@ export class CourseRequest extends Base {
     super(accessToken, refreshToken);
   }
 
-  async getListCourses(): Promise<{ data: CourseListItem[] }> {
-    return this.request("/api/course", {
-      method: "GET",
-    });
+  async getListCourses(ids?: string[]): Promise<{ data: CourseListItem[] }> {
+    const params =
+      ids && ids.length > 0
+        ? { ids: ids.join(',') }
+        : undefined
+
+
+    return this.request('/api/course', {
+      method: 'GET',
+      params,
+    })
   }
 
   async getCourseBySlug(slug: string): Promise<{ data: CourseDetailResponse }> {
@@ -20,6 +27,12 @@ export class CourseRequest extends Base {
 
   async getPurchasedCourses(): Promise<{ data: CourseListItem[] }> {
     return this.request("/api/course/purchased", {
+      method: "GET",
+    });
+  }
+
+  async getMaterialUrl(materialId: string): Promise<{ data: { url: string } }> {
+    return this.request(`/api/course/material/${materialId}`, {
       method: "GET",
     });
   }
