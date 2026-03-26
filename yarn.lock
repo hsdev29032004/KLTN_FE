@@ -4142,6 +4142,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hls.js@npm:^1.6.15":
+  version: 1.6.15
+  resolution: "hls.js@npm:1.6.15"
+  checksum: 10/c385f8b5ed541d658d2c7f8616d6aef6064855f6d70ad4e1d0e9696d35820394e4d170e53891530098d648108ce68af948d726a4fad73c99fda274c9e68aa49c
+  languageName: node
+  linkType: hard
+
 "http-cache-semantics@npm:^4.1.1":
   version: 4.2.0
   resolution: "http-cache-semantics@npm:4.2.0"
@@ -4671,6 +4678,7 @@ __metadata:
     clsx: "npm:^2.1.1"
     eslint: "npm:^9"
     eslint-config-next: "npm:16.1.1"
+    hls.js: "npm:^1.6.15"
     js-cookie: "npm:^3.0.5"
     jwt-decode: "npm:^4.0.0"
     lucide-react: "npm:^0.562.0"

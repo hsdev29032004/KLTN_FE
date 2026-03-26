@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux'
-import { fetchCourses, fetchCourseBySlug, fetchPurchasedCourses, setList, setSelected, clearSelected, setPurchasedList, clearPurchasedList } from './course-slice'
+import { fetchCourses, fetchCourseBySlug, fetchPurchasedCourses, setList, setSelected, clearSelected, setPurchasedList, clearPurchasedList, fetchMaterialUrl } from './course-slice'
 import type { RootState } from '@/stores/store'
 import { useAppDispatch } from '@/hooks/use-app-dispatch'
 import type { CourseListItem, CourseDetailResponse } from '@/types/course.type'
@@ -21,6 +21,7 @@ export function useCourseStore() {
     fetchCourses: (ids?: string[]) => dispatch(fetchCourses(ids)),
     fetchCourseBySlug: (slug: string) => dispatch(fetchCourseBySlug(slug)),
     fetchPurchasedCourses: () => dispatch(fetchPurchasedCourses()),
+    fetchMaterialUrl: (materialId: string) => dispatch(fetchMaterialUrl(materialId)),
     setList: (items: CourseListItem[]) => dispatch(setList(items)),
     setSelected: (c: CourseDetailResponse | null) => dispatch(setSelected(c)),
     clearSelected: () => dispatch(clearSelected()),

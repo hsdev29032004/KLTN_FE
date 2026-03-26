@@ -1,17 +1,24 @@
 'use client';
 
-import { Star, Users, BookOpen, Clock, Share2, Heart, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Star, Users, BookOpen, Clock, Heart, ShoppingCart } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+
 import { Course, ICourseReview, Lesson } from '@/types/course.type';
 import { usePurchaseStore } from '@/stores/purchase/purchase-store';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import Link from 'next/link';
+import { useCourseStore } from '@/stores/course/course-store';
+import { useAppStore } from '@/stores/app/app-store';
+import MediaModal from '@/components/media-modal';
+import { LessonItem } from './lesson-item';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CourseDetailProps {
   course: Course;
@@ -21,6 +28,104 @@ interface CourseDetailProps {
   relatedCourses: Course[];
 }
 
+interface MediaState {
+  open: boolean;
+  type: string;
+  url: string;
+  title: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatVND = (price: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+const parseContentItems = (content?: string | null): string[] => {
+  if (!content) return [];
+  return content.split('|').map((s) => s.trim()).filter(Boolean);
+};
+
+const calcAvgRating = (reviews: ICourseReview[]): string =>
+  reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : '0';
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function StarRow({ rating, size = 5 }: { rating: number; size?: number }) {
+  return (
+    <div className="flex">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`h-${size} w-${size} ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+            }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RatingSummary({ avgRating, total }: { avgRating: string; total: number }) {
+  return (
+    <Card>
+      <CardContent className="p-6 text-center">
+        <div className="mb-2 text-5xl font-bold">{avgRating}</div>
+        <div className="mb-4 flex justify-center">
+          <StarRow rating={Math.round(parseFloat(avgRating))} size={5} />
+        </div>
+        <p className="text-muted-foreground">{total} đánh giá</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReviewCard({ review }: { review: ICourseReview }) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={review.reviewer?.avatar} alt={review.reviewer?.fullName} />
+              <AvatarFallback>{review.reviewer?.fullName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <p className="text-sm font-semibold">{review.reviewer?.fullName}</p>
+          </div>
+          <StarRow rating={review.rating} size={4} />
+        </div>
+        <p className="text-sm text-muted-foreground">{review.content}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RelatedCourseCard({ course }: { course: Course }) {
+  return (
+    <Card className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg">
+      <div className="relative aspect-video overflow-hidden">
+        <img
+          src={course.thumbnail}
+          alt={course.name}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+      <CardContent className="p-4">
+        <h3 className="mb-2 line-clamp-2 font-semibold text-foreground group-hover:text-primary">
+          {course.name}
+        </h3>
+        <div className="mb-3 flex items-center gap-1 text-sm text-muted-foreground">
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <span className="font-semibold text-foreground">{course.star}</span>
+        </div>
+        <p className="text-lg font-bold">{formatVND(course.price)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export function CourseDetail({
   course,
   lessons,
@@ -28,43 +133,54 @@ export function CourseDetail({
   instructor,
   relatedCourses,
 }: CourseDetailProps) {
-  const purchaseStore = usePurchaseStore()
-  const router = useRouter()
+  const router = useRouter();
+  const purchaseStore = usePurchaseStore();
+  const courseStore = useCourseStore();
+  const appStore = useAppStore();
+
+  const [media, setMedia] = useState<MediaState>({
+    open: false,
+    type: '',
+    url: '',
+    title: '',
+  });
+
+  const contentItems = parseContentItems((course as any).content);
+  const avgRating = calcAvgRating(reviews);
+  const courseLessons: any[] = (course as any).lessons ?? [];
 
   const handleBuy = async () => {
-    await purchaseStore.addCourseSelected(course.id)
-    router.push('/payment/checkout')
-  }
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    await purchaseStore.addCourseSelected(course.id);
+    router.push('/payment/checkout');
   };
 
-  const parseContent = (content?: string | null) => {
-    if (!content) return [];
-    return content.split('|').map((item) => item.trim()).filter(Boolean);
+  const handlePreview = async (material: any) => {
+    try {
+      const res: any = await courseStore.fetchMaterialUrl(material.id);
+      const payload = res?.payload ?? res;
+      const url = payload?.url ?? payload;
+      const token = payload?.token;
+
+      appStore.setEncryptUrl(token ?? '');
+      setMedia({ open: true, type: material.type, url, title: material.name });
+    } catch (e) {
+      console.error('preview error', e);
+    }
   };
 
-  const contentItems = parseContent((course as any).content);
-
-  const avgRating =
-    reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-      : 0;
+  const closeMedia = () => setMedia((prev) => ({ ...prev, open: false }));
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
+      {/* ── Hero ── */}
       <section className="bg-muted py-12">
-        <div className="mx-auto grid max-w-7xl gap-8 grid-cols-1 md:grid-cols-3">
-          {/* Main Content */}
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-3">
+
+          {/* Left: course info */}
           <div className="md:col-span-2">
             <h1 className="mb-4 text-4xl font-bold">{course.name}</h1>
             <p className="mb-6 text-lg text-muted-foreground">{course.description}</p>
 
-            {/* Stats */}
             <div className="mb-6 flex flex-wrap gap-6">
               <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
@@ -77,7 +193,6 @@ export function CourseDetail({
               </div>
             </div>
 
-            {/* Content Items */}
             {contentItems.length > 0 && (
               <div className="mb-8 border-t pt-6">
                 <h3 className="mb-4 text-lg font-semibold">Kiến thức đạt được</h3>
@@ -93,7 +208,7 @@ export function CourseDetail({
             )}
           </div>
 
-          {/* Sidebar - Purchase Card */}
+          {/* Right: purchase card */}
           <div>
             <Card className="sticky top-24">
               <CardContent className="p-6">
@@ -105,10 +220,8 @@ export function CourseDetail({
                   />
                 </div>
 
-                <div className="mb-6">
-                  <p className="mb-2 text-3xl font-bold">{formatPrice(course.price)}</p>
-                  <p className="text-sm text-muted-foreground">Giá hiện tại</p>
-                </div>
+                <p className="mb-1 text-3xl font-bold">{formatVND(course.price)}</p>
+                <p className="mb-6 text-sm text-muted-foreground">Giá hiện tại</p>
 
                 <Button onClick={handleBuy} className="mb-3 w-full gap-2" size="lg">
                   <ShoppingCart className="h-5 w-5" />
@@ -137,152 +250,48 @@ export function CourseDetail({
         </div>
       </section>
 
-      {/* Main Content */}
+      {/* ── Main ── */}
       <section className="py-12">
-        <div className="mx-auto max-w-7xl">
-          {/* Lessons */}
-          <div className="mb-16">
-            <h2 className="mb-6 text-3xl font-bold">Nội dung khóa học</h2>
-            <div className="space-y-3">
-              {(course as any).lessons && (course as any).lessons.length > 0 ? (
-                (course as any).lessons.map((lesson: any, idx: number) => {
-                  const lessonMaterials = lesson.materials || [];
-                  const [openLesson, setOpenLesson] = useState(idx === 0);
-                  return (
-                    <Collapsible key={lesson.id} defaultOpen={openLesson} onOpenChange={setOpenLesson}>
-                      <Card className="overflow-hidden">
-                        <CollapsibleTrigger asChild>
-                          <div className="p-4 cursor-pointer hover:shadow-md">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h3 className="mb-2 font-semibold">{lesson.name}</h3>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span>{lessonMaterials.length} tài liệu</span>
-                                  <Badge variant="secondary" className="capitalize">
-                                    {lesson.status}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div>
-                                {openLesson ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                              </div>
-                            </div>
-                          </div>
-                        </CollapsibleTrigger>
+        <div className="mx-auto max-w-7xl space-y-16">
 
-                        <CollapsibleContent>
-                          <CardContent className="p-4 border-t">
-                            {lessonMaterials.length > 0 ? (
-                              <div className="mt-1 flex flex-col gap-2">
-                                {lessonMaterials.map((material: any) => {
-                                  const typeIcon: Record<string, string> = {
-                                    'video': '🎥',
-                                    'img': '🖼️',
-                                    'pdf': '📄',
-                                    'file': '📎',
-                                  };
-                                  const icon = typeIcon[material.type] || '📄';
-                                  return (
-                                    <div
-                                      key={material.id}
-                                      className="flex justify-between items-center"
-                                    >
-                                      <div>
-                                        {icon} {material.name}
-                                      </div>
-                                      {
-                                        material.isPreview && <span className="ml-1 text-xs text-blue-500 cursor-pointer">Xem trước</span>
-                                      }
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-muted-foreground">Không có tài liệu</div>
-                            )}
-                          </CardContent>
-                        </CollapsibleContent>
-                      </Card>
-                    </Collapsible>
-                  );
-                })
-              ) : (
-                <Card>
-                  <CardContent className="p-4 text-center text-muted-foreground">
-                    Chưa có bài học
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+          {/* Lessons */}
+          <div>
+            <h2 className="mb-6 text-3xl font-bold">Nội dung khóa học</h2>
+            {courseLessons.length > 0 ? (
+              <div className="space-y-3">
+                {courseLessons.map((lesson, idx) => (
+                  <LessonItem
+                    key={lesson.id}
+                    lesson={lesson}
+                    defaultOpen={idx === 0}
+                    onPreview={handlePreview}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-4 text-center text-muted-foreground">
+                  Chưa có bài học
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Reviews */}
-          <div className="mb-16">
+          <div>
             <h2 className="mb-6 text-3xl font-bold">Đánh giá</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Rating Summary */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <div className="mb-2 text-5xl font-bold">{avgRating}</div>
-                    <div className="mb-4 flex justify-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-5 w-5 ${i < Math.round(parseFloat(avgRating as string))
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-muted-foreground'
-                            }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-muted-foreground">{reviews.length} đánh giá</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recent Reviews */}
+              <RatingSummary avgRating={avgRating} total={reviews.length} />
               <div className="space-y-4">
                 {reviews.slice(0, 3).map((review) => (
-                  <Card key={review.id}>
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={review.reviewer?.avatar}
-                              alt={review.reviewer?.fullName}
-                            />
-                            <AvatarFallback>
-                              {review.reviewer?.fullName?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-semibold">{review.reviewer?.fullName}</p>
-                          </div>
-                        </div>
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${i < review.rating
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-muted-foreground'
-                                }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{review.content}</p>
-                    </CardContent>
-                  </Card>
+                  <ReviewCard key={review.id} review={review} />
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Instructor Section - After Reviews */}
-          <div className="mb-16 border-t pt-8">
+          {/* Instructor */}
+          <div className="border-t pt-8">
             <h2 className="mb-6 text-3xl font-bold">Giảng viên</h2>
             <Card>
               <CardContent className="p-6">
@@ -292,10 +301,15 @@ export function CourseDetail({
                     <AvatarFallback>{instructor?.fullName?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <Link href={`/lecturer-info/${instructor.slug}`} className="font-semibold text-lg">{instructor?.fullName}</Link>
+                    <Link
+                      href={`/lecturer-info/${instructor.slug}`}
+                      className="text-lg font-semibold hover:underline"
+                    >
+                      {instructor?.fullName}
+                    </Link>
                     <p className="text-sm text-muted-foreground">Giảng viên hàng đầu</p>
                     {instructor?.email && (
-                      <p className="text-sm text-muted-foreground mt-1">{instructor.email}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{instructor.email}</p>
                     )}
                   </div>
                 </div>
@@ -307,38 +321,25 @@ export function CourseDetail({
           {relatedCourses.length > 0 && (
             <div>
               <h2 className="mb-6 text-3xl font-bold">Khóa học liên quan</h2>
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                {relatedCourses.slice(0, 4).map((relatedCourse) => (
-                  <Card key={relatedCourse.id} className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg">
-                    <div className="relative aspect-video overflow-hidden">
-                      <img
-                        src={relatedCourse.thumbnail}
-                        alt={relatedCourse.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="mb-2 line-clamp-2 font-semibold text-foreground group-hover:text-primary">
-                        {relatedCourse.name}
-                      </h3>
-                      <div className="mb-3 flex items-center gap-1 text-sm text-muted-foreground">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-foreground">{relatedCourse.star}</span>
-                      </div>
-                      <p className="text-lg font-bold">
-                        {new Intl.NumberFormat('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        }).format(relatedCourse.price)}
-                      </p>
-                    </CardContent>
-                  </Card>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {relatedCourses.slice(0, 4).map((c) => (
+                  <RelatedCourseCard key={c.id} course={c} />
                 ))}
               </div>
             </div>
           )}
         </div>
       </section>
+
+      {/* ── Media modal (single instance) ── */}
+      <MediaModal
+        open={media.open}
+        onOpenChange={closeMedia}
+        type={media.type as any}
+        url={media.url}
+        encryptUrl={appStore.encryptUrl}
+        title={media.title}
+      />
     </div>
   );
 }

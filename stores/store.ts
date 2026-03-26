@@ -4,12 +4,14 @@ import authReducer from './auth/auth-slice'
 import notificationReducer from './notification/notification.slice'
 import courseReducer from './course/course-slice'
 import purchaseReducer from './purchase/purchase-slice'
+import appReducer from './app/app-slice'
 
 const rootReducer = combineReducers({
   auth: authReducer,
   notification: notificationReducer,
   course: courseReducer,
   purchase: purchaseReducer,
+  app: appReducer
 })
 
 export type RootState = ReturnType<typeof rootReducer>

@@ -30,6 +30,12 @@ export class CourseRequest extends Base {
       method: "GET",
     });
   }
+
+  async getMaterialUrl(materialId: string): Promise<{ data: { url: string } }> {
+    return this.request(`/api/course/material/${materialId}`, {
+      method: "GET",
+    });
+  }
 }
 
 export const courseRequest = new CourseRequest();

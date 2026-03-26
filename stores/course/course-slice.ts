@@ -66,6 +66,19 @@ export const fetchPurchasedCourses = createAsyncThunk(
   }
 )
 
+export const fetchMaterialUrl = createAsyncThunk(
+  'course/fetchMaterialUrl',
+  async (materialId: string, { rejectWithValue }) => {
+    try {
+      const res = await courseRequest.getMaterialUrl(materialId)
+      const payload = res.data.url
+      return payload as string
+    } catch (error) {
+      return rejectWithValue('Fetch material url failed')
+    }
+  }
+)
+
 const courseSlice = createSlice({
   name: 'course',
   initialState,
