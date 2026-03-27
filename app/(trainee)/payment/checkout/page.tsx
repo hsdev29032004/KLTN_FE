@@ -22,6 +22,8 @@ export default function CheckoutPage() {
 
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [paying, setPaying] = useState(false);
+
   // avoid infinite loop by depending on a stable primitive (string) instead of array/object
   const selectedKey = useMemo(() => {
     const arr = purchaseStore.courseSelected;
@@ -59,6 +61,17 @@ export default function CheckoutPage() {
 
   const subtotal = courses.reduce((sum, c) => sum + (c.price ?? 0), 0);
   const total = subtotal;
+
+  const handlePurchase = async () => {
+    setPaying(true);
+    try {
+      await purchaseStore.purchaseCourse(purchaseStore.courseSelected);
+    } catch (err) {
+      console.error("Lỗi thanh toán:", err);
+    } finally {
+      setPaying(false);
+    }
+  };
   return (
     <div style={{ maxWidth: 1100, margin: "24px auto", padding: 16 }}>
       <h1 className="text-2xl font-bold mb-4">Thanh toán</h1>
@@ -110,7 +123,9 @@ export default function CheckoutPage() {
                   <span>Tổng cộng</span>
                   <span>{formatVND(total)}</span>
                 </div>
-                <Button style={{ width: "100%" }}>Thanh toán</Button>
+                <Button style={{ width: "100%" }} onClick={handlePurchase} disabled={paying}>
+                  {paying ? "Đang thanh toán..." : "Thanh toán"}
+                </Button>
               </CardFooter>
             </Card>
           </aside>
