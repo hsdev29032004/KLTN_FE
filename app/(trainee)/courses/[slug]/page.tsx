@@ -8,7 +8,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
   const sdk = await useSdk();
   let course: CourseDetailResponse | null = null;
   try {
-    const courseResponse = await sdk.getCourseBySlug(slug);
+    const courseResponse = await sdk.getCourseBySlugOrId(slug);
     course = courseResponse?.data;
 
   } catch (err) {
