@@ -34,20 +34,20 @@ export default function MediaModal({ open, onOpenChange, type, url, encryptUrl, 
       const hls = new Hls({
         xhrSetup(xhr) {
           xhr.withCredentials = true
-          xhr.setRequestHeader("x-url", `http://localhost:3002/api/videos/${url}/index.m3u8`)
+          xhr.setRequestHeader("x-url", `${process.env.NEXT_PUBLIC_CLOUD_URL}/api/videos/${url}/index.m3u8`)
           if (encryptUrl) {
             xhr.setRequestHeader("x-encrypt-url", encryptUrl)
           }
         }
       })
       hlsRef.current = hls
-      hls.loadSource(`${process.env.NEXT_PUBLIC_NEXTSERVER_DOMAIN}/api/videos/${url}/index.m3u8`)
+      hls.loadSource(`${process.env.NEXT_PUBLIC_CLOUD_URL}/api/videos/${url}/index.m3u8`)
       hls.attachMedia(video)
       hls.on(Hls.Events.ERROR, (_event, data) => {
         console.error("HLS error:", data)
       })
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = `${process.env.NEXT_PUBLIC_NEXTSERVER_DOMAIN}/api/videos/${url}/index.m3u8`
+      video.src = `${process.env.NEXT_PUBLIC_CLOUD_URL}/api/videos/${url}/index.m3u8`
     }
   }, [url, encryptUrl])
 
