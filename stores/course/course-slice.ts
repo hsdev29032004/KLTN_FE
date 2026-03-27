@@ -44,7 +44,7 @@ export const fetchCourseBySlug = createAsyncThunk(
   'course/fetchCourseBySlug',
   async (slug: string, { rejectWithValue }) => {
     try {
-      const res = await courseRequest.getCourseBySlug(slug)
+      const res = await courseRequest.getCourseBySlugOrId(slug)
       const payload = res.data
       return payload as CourseDetailResponse
     } catch (error) {

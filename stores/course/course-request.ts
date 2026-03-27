@@ -19,8 +19,8 @@ export class CourseRequest extends Base {
     })
   }
 
-  async getCourseBySlug(slug: string): Promise<{ data: CourseDetailResponse }> {
-    return this.request(`/api/course/${slug}`, {
+  async getCourseBySlugOrId(slugOrId: string): Promise<{ data: CourseDetailResponse, canAccess: boolean }> {
+    return this.request(`/api/course/${slugOrId}`, {
       method: "GET",
     });
   }

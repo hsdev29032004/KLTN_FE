@@ -126,10 +126,7 @@ export function LandingHeader() {
                     <Link href="/my-courses">Khóa học của tôi</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/history">Lịch sử giao dịch</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/cart">Giỏ hàng</Link>
+                    <Link href="/transactions/history">Lịch sử giao dịch</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
