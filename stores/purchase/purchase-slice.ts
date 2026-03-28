@@ -14,7 +14,7 @@ export const purchaseCourse = createAsyncThunk(
   async (courseIds: string[], { rejectWithValue }) => {
     try {
       const response = await purchaseRequest.purchaseCourse(courseIds)
-      return response
+      return response.data
     } catch (error: any) {
       console.log(error)
       return rejectWithValue(error?.response)
