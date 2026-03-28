@@ -20,7 +20,7 @@ export class AuthRequest extends Base {
     });
   }
 
-  async register(data: { name: string; email: string; password: string }): Promise<UserLoginResponse> {
+  async register(data: { name: string; email: string; password: string, role: "User" | "Teacher" }): Promise<UserLoginResponse> {
     return this.request('/api/auth/register', {
       method: 'POST',
       data,
