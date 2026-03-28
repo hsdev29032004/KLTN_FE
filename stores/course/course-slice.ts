@@ -1,18 +1,15 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { courseRequest } from './course-request'
-import type {
-  CourseListItem,
-  CourseDetailResponse,
-} from '@/types/course.type'
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { courseRequest } from "./course-request";
+import type { CourseListItem, CourseDetailResponse } from "@/types/course.type";
 
 interface CourseState {
-  list: CourseListItem[]
-  selected: CourseDetailResponse | null
-  purchasedList: CourseListItem[]
-  loadingList: boolean
-  loadingSelected: boolean
-  loadingPurchasedList: boolean
-  error?: string | null
+  list: CourseListItem[];
+  selected: CourseDetailResponse | null;
+  purchasedList: CourseListItem[];
+  loadingList: boolean;
+  loadingSelected: boolean;
+  loadingPurchasedList: boolean;
+  error?: string | null;
 }
 
 const initialState: CourseState = {
@@ -23,129 +20,149 @@ const initialState: CourseState = {
   loadingSelected: false,
   loadingPurchasedList: false,
   error: null,
-}
+};
 
 export const fetchCourses = createAsyncThunk(
-  'course/fetchCourses',
-  async (ids: string[] | undefined, { rejectWithValue }) => {
-    console.log(ids, 'ids');
-
+  "course/fetchCourses",
+  async (
+    ids: string[] | undefined,
+    { rejectWithValue },
+  ): Promise<CourseListItem[] | ReturnType<typeof rejectWithValue>> => {
     try {
-      const res = await courseRequest.getListCourses(ids)
-      const payload = res.data
-      return payload as CourseListItem[]
+      const res = await courseRequest.getListCourses(ids);
+      const payload = res.data;
+      return payload as CourseListItem[];
     } catch (error) {
-      return rejectWithValue('Fetch courses failed')
+      return rejectWithValue("Fetch courses failed");
     }
-  }
-)
+  },
+);
 
 export const fetchCourseBySlug = createAsyncThunk(
-  'course/fetchCourseBySlug',
+  "course/fetchCourseBySlug",
   async (slug: string, { rejectWithValue }) => {
     try {
       const res = await courseRequest.getCourseBySlugOrId(slug)
       const payload = res.data
       return payload as CourseDetailResponse
     } catch (error) {
-      return rejectWithValue('Fetch course failed')
+      return rejectWithValue("Fetch course failed");
     }
-  }
-)
+  },
+);
 
 export const fetchPurchasedCourses = createAsyncThunk(
-  'course/fetchPurchasedCourses',
+  "course/fetchPurchasedCourses",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await courseRequest.getPurchasedCourses()
-      const payload = res.data
-      return payload as CourseListItem[]
+      const res = await courseRequest.getPurchasedCourses();
+      const payload = res.data;
+      return payload as CourseListItem[];
     } catch (error) {
-      return rejectWithValue('Fetch purchased courses failed')
+      return rejectWithValue("Fetch purchased courses failed");
     }
-  }
-)
+  },
+);
 
 export const fetchMaterialUrl = createAsyncThunk(
-  'course/fetchMaterialUrl',
+  "course/fetchMaterialUrl",
   async (materialId: string, { rejectWithValue }) => {
     try {
-      const res = await courseRequest.getMaterialUrl(materialId)
-      const payload = res.data.url
-      return payload as string
+      const res = await courseRequest.getMaterialUrl(materialId);
+      const payload = res.data.url;
+      return payload as string;
     } catch (error) {
-      return rejectWithValue('Fetch material url failed')
+      return rejectWithValue("Fetch material url failed");
     }
-  }
-)
+  },
+);
 
 const courseSlice = createSlice({
-  name: 'course',
+  name: "course",
   initialState,
   reducers: {
     setList: (state, action: PayloadAction<CourseListItem[]>) => {
-      state.list = action.payload
+      state.list = action.payload;
     },
-    setSelected: (state, action: PayloadAction<CourseDetailResponse | null>) => {
-      state.selected = action.payload
+    setSelected: (
+      state,
+      action: PayloadAction<CourseDetailResponse | null>,
+    ) => {
+      state.selected = action.payload;
     },
     clearSelected: (state) => {
-      state.selected = null
+      state.selected = null;
     },
     setPurchasedList: (state, action: PayloadAction<CourseListItem[]>) => {
-      state.purchasedList = action.payload
+      state.purchasedList = action.payload;
     },
     clearPurchasedList: (state) => {
-      state.purchasedList = []
+      state.purchasedList = [];
     },
   },
   extraReducers: (builder) => {
     // fetchCourses
     builder
       .addCase(fetchCourses.pending, (state) => {
-        state.loadingList = true
-        state.error = null
+        state.loadingList = true;
+        state.error = null;
       })
-      .addCase(fetchCourses.fulfilled, (state, action: PayloadAction<CourseListItem[]>) => {
-        state.loadingList = false
-        state.list = action.payload
-      })
+      .addCase(
+        fetchCourses.fulfilled,
+        (state, action: PayloadAction<CourseListItem[]>) => {
+          state.loadingList = false;
+          state.list = action.payload;
+        },
+      )
       .addCase(fetchCourses.rejected, (state, action) => {
-        state.loadingList = false
-        state.error = action.payload as string || 'Fetch courses failed'
-      })
+        state.loadingList = false;
+        state.error = (action.payload as string) || "Fetch courses failed";
+      });
 
     // fetchCourseBySlug
     builder
       .addCase(fetchCourseBySlug.pending, (state) => {
-        state.loadingSelected = true
-        state.error = null
+        state.loadingSelected = true;
+        state.error = null;
       })
-      .addCase(fetchCourseBySlug.fulfilled, (state, action: PayloadAction<CourseDetailResponse>) => {
-        state.loadingSelected = false
-        state.selected = action.payload
-      })
+      .addCase(
+        fetchCourseBySlug.fulfilled,
+        (state, action: PayloadAction<CourseDetailResponse>) => {
+          state.loadingSelected = false;
+          state.selected = action.payload;
+        },
+      )
       .addCase(fetchCourseBySlug.rejected, (state, action) => {
-        state.loadingSelected = false
-        state.error = action.payload as string || 'Fetch course failed'
-      })
+        state.loadingSelected = false;
+        state.error = (action.payload as string) || "Fetch course failed";
+      });
 
     // fetchPurchasedCourses
     builder
       .addCase(fetchPurchasedCourses.pending, (state) => {
-        state.loadingPurchasedList = true
-        state.error = null
+        state.loadingPurchasedList = true;
+        state.error = null;
       })
-      .addCase(fetchPurchasedCourses.fulfilled, (state, action: PayloadAction<CourseListItem[]>) => {
-        state.loadingPurchasedList = false
-        state.purchasedList = action.payload
-      })
+      .addCase(
+        fetchPurchasedCourses.fulfilled,
+        (state, action: PayloadAction<CourseListItem[]>) => {
+          state.loadingPurchasedList = false;
+          state.purchasedList = action.payload;
+        },
+      )
       .addCase(fetchPurchasedCourses.rejected, (state, action) => {
-        state.loadingPurchasedList = false
-        state.error = action.payload as string || 'Fetch purchased courses failed'
-      })
+        state.loadingPurchasedList = false;
+        state.error =
+          (action.payload as string) || "Fetch purchased courses failed";
+      });
   },
-})
+});
 
-export const { setList, setSelected, clearSelected, setPurchasedList, clearPurchasedList } = courseSlice.actions
-export default courseSlice.reducer
+export const {
+  setList,
+  setSelected,
+  clearSelected,
+  setPurchasedList,
+  clearPurchasedList,
+} = courseSlice.actions;
+export default courseSlice.reducer;

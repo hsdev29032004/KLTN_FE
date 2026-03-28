@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { purchaseRequest } from './purchase-request'
 
 interface PurchaseState {
   courseSelected: string[]
@@ -7,6 +8,19 @@ interface PurchaseState {
 const initialState: PurchaseState = {
   courseSelected: [],
 }
+
+export const purchaseCourse = createAsyncThunk(
+  'purchase/purchaseCourse',
+  async (courseIds: string[], { rejectWithValue }) => {
+    try {
+      const response = await purchaseRequest.purchaseCourse(courseIds)
+      return response.data
+    } catch (error: any) {
+      console.log(error)
+      return rejectWithValue(error?.response)
+    }
+  }
+)
 
 const purchaseSlice = createSlice({
   name: 'purchase',
