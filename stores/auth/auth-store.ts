@@ -13,7 +13,7 @@ export function useAuthStore() {
     setUser: (u: any) => dispatch(setUser(u)),
     fetchMe: () => dispatch(fetchMe()),
     login: (email: string, password: string): Promise<UserLoginResponse> => dispatch(login({ email, password })),
-    register: (data: { name: string; email: string; password: string }) => dispatch(register(data)),
+    register: (data: { name: string; email: string; password: string, role: "User" | "Teacher" }) => dispatch(register(data)),
     logout: () => dispatch(logout()),
     refreshToken: () => dispatch(refreshToken()),
   }

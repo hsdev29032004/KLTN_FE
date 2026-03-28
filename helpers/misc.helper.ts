@@ -11,7 +11,7 @@ export const getRedirectPath = (user: User | null, currentPath: string): string 
   switch (user.role?.name) {
     case 'User':
       return '/';
-    case 'Lecturer':
+    case 'Teacher':
       return '/lecturer/dashboard';
     case 'Admin':
       return '/admin/dashboard';
