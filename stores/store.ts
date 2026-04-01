@@ -7,6 +7,7 @@ import purchaseReducer from "./purchase/purchase-slice";
 import appReducer from "./app/app-slice";
 import bankReducer from "./bank/bank-slice";
 import statReducer from "./stat/stat-slice";
+import reviewReducer from "./review/review-slice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
   app: appReducer,
   bank: bankReducer,
   stat: statReducer,
+  review: reviewReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

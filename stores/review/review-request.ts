@@ -10,6 +10,13 @@ export class ReviewRequest extends Base {
       method: 'GET',
     });
   }
+
+  async createReview(payload: { courseId: string; rating: number; content: string }): Promise<{ data: any }> {
+    return this.request(`/api/review`, {
+      method: 'POST',
+      data: payload,
+    });
+  }
 }
 
 export const reviewRequest = new ReviewRequest();

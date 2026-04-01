@@ -17,6 +17,7 @@ import { useCourseStore } from '@/stores/course/course-store';
 import { useAppStore } from '@/stores/app/app-store';
 import MediaModal from '@/components/media-modal';
 import { LessonItem } from './lesson-item';
+import { CourseReviews } from '@/components/course/course-reviews';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,56 +50,6 @@ const calcAvgRating = (reviews: ICourseReview[]): string =>
   reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '0';
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function StarRow({ rating, size = 5 }: { rating: number; size?: number }) {
-  return (
-    <div className="flex">
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          className={`h-${size} w-${size} ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
-            }`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function RatingSummary({ avgRating, total }: { avgRating: string; total: number }) {
-  return (
-    <Card>
-      <CardContent className="p-6 text-center">
-        <div className="mb-2 text-5xl font-bold">{avgRating}</div>
-        <div className="mb-4 flex justify-center">
-          <StarRow rating={Math.round(parseFloat(avgRating))} size={5} />
-        </div>
-        <p className="text-muted-foreground">{total} đánh giá</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ReviewCard({ review }: { review: ICourseReview }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={review.reviewer?.avatar} alt={review.reviewer?.fullName} />
-              <AvatarFallback>{review.reviewer?.fullName?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <p className="text-sm font-semibold">{review.reviewer?.fullName}</p>
-          </div>
-          <StarRow rating={review.rating} size={4} />
-        </div>
-        <p className="text-sm text-muted-foreground">{review.content}</p>
-      </CardContent>
-    </Card>
-  );
-}
 
 function RelatedCourseCard({ course }: { course: Course }) {
   return (
@@ -133,6 +84,8 @@ export function CourseDetail({
   instructor,
   relatedCourses,
 }: CourseDetailProps) {
+  console.log(course);
+  
   const router = useRouter();
   const purchaseStore = usePurchaseStore();
   const courseStore = useCourseStore();
@@ -278,17 +231,7 @@ export function CourseDetail({
           </div>
 
           {/* Reviews */}
-          <div>
-            <h2 className="mb-6 text-3xl font-bold">Đánh giá</h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              <RatingSummary avgRating={avgRating} total={reviews.length} />
-              <div className="space-y-4">
-                {reviews.slice(0, 3).map((review) => (
-                  <ReviewCard key={review.id} review={review} />
-                ))}
-              </div>
-            </div>
-          </div>
+          <CourseReviews initialReviews={reviews} courseId={course.id} />
 
           {/* Instructor */}
           <div className="border-t pt-8">
