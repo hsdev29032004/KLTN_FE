@@ -23,9 +23,30 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/stores/auth/auth-store';
+import SDK from '@/stores/sdk';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const authStore = useAuthStore();
+  const [courseItems, setCourseItems] = React.useState<
+    { title: string; url: string }[]
+  >([]);
+
+  React.useEffect(() => {
+    const userId = authStore.user?.id;
+    if (!userId) return;
+
+    SDK.getInstance()
+      .getCourseByUserId(userId)
+      .then((res) => {
+        setCourseItems(
+          res.data.map((c) => ({
+            title: c.name,
+            url: `/lecturer/courses/${c.id}`,
+          })),
+        );
+      })
+      .catch(() => {});
+  }, [authStore.user?.id]);
 
   const data = {
     user: {
@@ -49,22 +70,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
       {
         title: 'Quản lý khóa học',
-        url: '/lecturer/course-management',
+        url: '/lecturer/courses',
         icon: BookOpen,
-        items: [
-          {
-            title: 'React Advanced',
-            url: '/lecturer/course-management/react-advanced',
-          },
-          {
-            title: 'TypeScript Pro',
-            url: '/lecturer/course-management/typescript-pro',
-          },
-          {
-            title: 'Design Patterns',
-            url: '/lecturer/course-management/design-patterns',
-          },
-        ],
+        items: courseItems,
       },
       {
         title: 'Đoạn chat',

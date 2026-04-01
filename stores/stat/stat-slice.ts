@@ -13,14 +13,14 @@ const initialState: StatState = {
   error: null,
 };
 
-export const fetchRevenueByMonth = createAsyncThunk(
-  'stat/fetchRevenueByMonth',
+export const fetchStats = createAsyncThunk(
+  'stat/fetchStats',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await statRequest.fetchRevenueByMonth();
+      const res = await statRequest.fetchStats();
       return res.data;
     } catch (error) {
-      return rejectWithValue('Fetch revenue failed');
+      return rejectWithValue('Fetch stats failed');
     }
   },
 );
@@ -36,18 +36,15 @@ const statSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchRevenueByMonth.pending, (state) => {
+      .addCase(fetchStats.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        fetchRevenueByMonth.fulfilled,
-        (state, action: PayloadAction<any>) => {
-          state.loading = false;
-          state.revenueByMonth = action.payload;
-        },
-      )
-      .addCase(fetchRevenueByMonth.rejected, (state, action) => {
+      .addCase(fetchStats.fulfilled, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.revenueByMonth = action.payload;
+      })
+      .addCase(fetchStats.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || 'Fetch revenue failed';
       });

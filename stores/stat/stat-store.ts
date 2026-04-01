@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { fetchRevenueByMonth, clearStat } from './stat-slice';
+import { fetchStats, clearStat } from './stat-slice';
 import type { RootState } from '@/stores/store';
 import { useAppDispatch } from '@/hooks/use-app-dispatch';
 
@@ -16,7 +16,7 @@ export function useStatStore() {
     revenueByMonth,
     loading,
     error,
-    fetchRevenueByMonth: () => dispatch(fetchRevenueByMonth()),
+    fetchStats: () => dispatch(fetchStats()),
     clearStat: () => dispatch(clearStat()),
   };
 }

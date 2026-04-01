@@ -2,6 +2,7 @@ import { AuthRequest } from "./auth/auth-request";
 import { Base } from "./base";
 import { CourseRequest } from "./course/course-request";
 import { PurchaseRequest } from "./purchase/purchase-request";
+import { StatRequest } from "./stat/stat-request";
 
 function applyMixins(derivedCtor: any, baseCtors: any[]) {
   baseCtors.forEach((baseCtor) => {
@@ -44,7 +45,8 @@ interface SDK
   extends
   AuthRequest,
   CourseRequest,
-  PurchaseRequest { }
-applyMixins(SDK, [AuthRequest, CourseRequest, PurchaseRequest]);
+  PurchaseRequest,
+  StatRequest { }
+applyMixins(SDK, [AuthRequest, CourseRequest, PurchaseRequest, StatRequest]);
 
 export default SDK;

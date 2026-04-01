@@ -8,58 +8,34 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-
-const data = {
-  message: 'Lấy thống kê giảng viên thành công',
-  data: {
-    overview: {
-      totalCourses: 3,
-      totalStudents: 6,
-      totalReviews: 0,
-      avgRating: 0,
-      totalRevenue: 895000,
-    },
-    courses: [
-      {
-        id: 'aa4c69b2-b882-4959-808f-7304e042e5d9',
-        name: 'NestJS: Cẩm nang toàn diện dành cho nhà phát triển',
-        price: 49000,
-        status: 'published',
-        star: '3.3',
-        studentCount: 0,
-        createdAt: '2026-03-21T03:54:57.565Z',
-        _count: { userCourses: 2, reviews: 0, lessons: 4 },
-      },
-      {
-        id: 'd6e9d5cb-fe0b-4521-921e-c8b4fd66543c',
-        name: 'HRBP – Đối tác Kinh Doanh Xuất Sắc',
-        price: 199000,
-        status: 'published',
-        star: '2.8',
-        studentCount: 0,
-        createdAt: '2026-03-21T03:54:57.703Z',
-        _count: { userCourses: 2, reviews: 0, lessons: 4 },
-      },
-      {
-        id: '06d9be19-a203-4c15-a2bc-95e1d32e5a00',
-        name: 'Khóa học NextJS 14-ReactJS-Typescript thực chiến',
-        price: 299000,
-        status: 'published',
-        star: '3.2',
-        studentCount: 0,
-        createdAt: '2026-03-21T03:54:57.425Z',
-        _count: { userCourses: 2, reviews: 0, lessons: 4 },
-      },
-    ],
-  },
-};
+import { useSdk } from '@/hooks/use-my-cookies';
+import { RevenueChart } from '@/components/lecturer/revenue-chart';
 
 function formatCurrency(v: number) {
   return v.toLocaleString('vi-VN') + ' ₫';
 }
 
-export default async function Dashboard() {
-  const { overview, courses } = data.data;
+function getDefaultDateRange() {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 30);
+  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  return { startDate: fmt(start), endDate: fmt(end) };
+}
+
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ startDate?: string; endDate?: string }>;
+}) {
+  const params = await searchParams;
+  const defaults = getDefaultDateRange();
+  const startDate = params.startDate || defaults.startDate;
+  const endDate = params.endDate || defaults.endDate;
+
+  const sdk = await useSdk();
+  const res = await sdk.fetchStats({ startDate, endDate });
+  const { overview, courses, invoiceDetails } = res.data;
 
   return (
     <div className="space-y-6 p-6">
@@ -95,6 +71,12 @@ export default async function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <RevenueChart
+        invoiceDetails={invoiceDetails ?? []}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
       <section>
         <h2 className="text-lg font-medium">Danh sách khóa học</h2>

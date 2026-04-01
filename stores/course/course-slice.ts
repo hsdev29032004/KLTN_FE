@@ -1,6 +1,6 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { courseRequest } from "./course-request";
-import type { CourseListItem, CourseDetailResponse } from "@/types/course.type";
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { courseRequest } from './course-request';
+import type { CourseListItem, CourseDetailResponse } from '@/types/course.type';
 
 interface CourseState {
   list: CourseListItem[];
@@ -23,7 +23,7 @@ const initialState: CourseState = {
 };
 
 export const fetchCourses = createAsyncThunk(
-  "course/fetchCourses",
+  'course/fetchCourses',
   async (
     ids: string[] | undefined,
     { rejectWithValue },
@@ -33,52 +33,65 @@ export const fetchCourses = createAsyncThunk(
       const payload = res.data;
       return payload as CourseListItem[];
     } catch (error) {
-      return rejectWithValue("Fetch courses failed");
+      return rejectWithValue('Fetch courses failed');
     }
   },
 );
 
 export const fetchCourseBySlug = createAsyncThunk(
-  "course/fetchCourseBySlug",
+  'course/fetchCourseBySlug',
   async (slug: string, { rejectWithValue }) => {
     try {
-      const res = await courseRequest.getCourseBySlugOrId(slug)
-      const payload = res.data
-      return payload as CourseDetailResponse
+      const res = await courseRequest.getCourseBySlugOrId(slug);
+      const payload = res.data;
+      return payload as CourseDetailResponse;
     } catch (error) {
-      return rejectWithValue("Fetch course failed");
+      return rejectWithValue('Fetch course failed');
     }
   },
 );
 
 export const fetchPurchasedCourses = createAsyncThunk(
-  "course/fetchPurchasedCourses",
+  'course/fetchPurchasedCourses',
   async (_, { rejectWithValue }) => {
     try {
       const res = await courseRequest.getPurchasedCourses();
       const payload = res.data;
       return payload as CourseListItem[];
     } catch (error) {
-      return rejectWithValue("Fetch purchased courses failed");
+      return rejectWithValue('Fetch purchased courses failed');
     }
   },
 );
 
 export const fetchMaterialUrl = createAsyncThunk(
-  "course/fetchMaterialUrl",
+  'course/fetchMaterialUrl',
   async (materialId: string, { rejectWithValue }) => {
     try {
       const res = await courseRequest.getMaterialUrl(materialId);
       const payload = res.data.url;
       return payload as string;
     } catch (error) {
-      return rejectWithValue("Fetch material url failed");
+      return rejectWithValue('Fetch material url failed');
+    }
+  },
+);
+
+export const fetchCourseByUserId = createAsyncThunk(
+  'course/fetchCourseByUserId',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const res = await courseRequest.getCourseByUserId(userId);
+      const payload = res.data;
+      return payload as CourseListItem[];
+    } catch (error) {
+      return rejectWithValue('Fetch courses by user ID failed');
     }
   },
 );
 
 const courseSlice = createSlice({
-  name: "course",
+  name: 'course',
   initialState,
   reducers: {
     setList: (state, action: PayloadAction<CourseListItem[]>) => {
@@ -116,7 +129,7 @@ const courseSlice = createSlice({
       )
       .addCase(fetchCourses.rejected, (state, action) => {
         state.loadingList = false;
-        state.error = (action.payload as string) || "Fetch courses failed";
+        state.error = (action.payload as string) || 'Fetch courses failed';
       });
 
     // fetchCourseBySlug
@@ -134,7 +147,7 @@ const courseSlice = createSlice({
       )
       .addCase(fetchCourseBySlug.rejected, (state, action) => {
         state.loadingSelected = false;
-        state.error = (action.payload as string) || "Fetch course failed";
+        state.error = (action.payload as string) || 'Fetch course failed';
       });
 
     // fetchPurchasedCourses
@@ -153,7 +166,7 @@ const courseSlice = createSlice({
       .addCase(fetchPurchasedCourses.rejected, (state, action) => {
         state.loadingPurchasedList = false;
         state.error =
-          (action.payload as string) || "Fetch purchased courses failed";
+          (action.payload as string) || 'Fetch purchased courses failed';
       });
   },
 });

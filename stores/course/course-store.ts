@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useSelector } from 'react-redux';
 import {
   fetchCourses,
   fetchCourseBySlug,
@@ -9,10 +9,11 @@ import {
   setPurchasedList,
   clearPurchasedList,
   fetchMaterialUrl,
-} from "./course-slice";
-import type { RootState } from "@/stores/store";
-import { useAppDispatch } from "@/hooks/use-app-dispatch";
-import type { CourseListItem, CourseDetailResponse } from "@/types/course.type";
+  fetchCourseByUserId,
+} from './course-slice';
+import type { RootState } from '@/stores/store';
+import { useAppDispatch } from '@/hooks/use-app-dispatch';
+import type { CourseListItem, CourseDetailResponse } from '@/types/course.type';
 
 export function useCourseStore() {
   const dispatch = useAppDispatch();
@@ -47,5 +48,7 @@ export function useCourseStore() {
     setPurchasedList: (items: CourseListItem[]) =>
       dispatch(setPurchasedList(items)),
     clearPurchasedList: () => dispatch(clearPurchasedList()),
+    fetchCourseByUserId: (userId: string) =>
+      dispatch(fetchCourseByUserId(userId)),
   };
 }
