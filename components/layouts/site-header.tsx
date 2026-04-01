@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun, Wallet } from "lucide-react"
 import { useTheme } from "next-themes"
-
+import { useAuthStore } from "@/stores/auth/auth-store"
+import { formatMoney } from "@/helpers/format.helper"
 
 export function SiteHeader() {
+  const authStore = useAuthStore();
   const { setTheme } = useTheme()
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b ease-linear">
@@ -20,6 +22,12 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">Documents</h1>
         <div className="ml-auto flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2 rounded-md border px-3 py-2">
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">
+              {formatMoney(authStore.user.availableAmount || 0)}
+            </span>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">

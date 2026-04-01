@@ -38,9 +38,9 @@ export async function useRedirectServer(user: User | null) {
       shouldRedirect = true;
     }
 
-    // Lecturer → chỉ được /lecturer/*
+    // Teacher → chỉ được /lecturer/*
     else if (
-      user.role.name === 'Lecturer' &&
+      user.role.name === 'Teacher' &&
       !currentPath.startsWith('/lecturer')
     ) {
       shouldRedirect = true;

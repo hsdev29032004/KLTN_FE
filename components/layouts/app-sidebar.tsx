@@ -1,161 +1,114 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
 import {
-  AudioWaveform,
   BookOpen,
-  Bot,
-  Command,
   Frame,
   GalleryVerticalEnd,
   Map,
   PieChart,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
+} from 'lucide-react';
 
-import { NavMain } from "@/components/layouts/nav-main"
-import { NavProjects } from "@/components/layouts/nav-projects"
-import { NavUser } from "@/components/layouts/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from '@/components/layouts/nav-main';
+import { NavProjects } from '@/components/layouts/nav-projects';
+import { NavUser } from '@/components/layouts/nav-user';
+import { TeamSwitcher } from '@/components/team-switcher';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "https://img.freepik.com/premium-vector/man-empty-avatar-casual-business-style-vector-photo-placeholder-social-networks-resumes_885953-434.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+} from '@/components/ui/sidebar';
+import { useAuthStore } from '@/stores/auth/auth-store';
+import SDK from '@/stores/sdk';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const authStore = useAuthStore();
+  const [courseItems, setCourseItems] = React.useState<
+    { title: string; url: string }[]
+  >([]);
+
+  React.useEffect(() => {
+    const userId = authStore.user?.id;
+    if (!userId) return;
+
+    SDK.getInstance()
+      .getCourseByUserId(userId)
+      .then((res) => {
+        setCourseItems(
+          res.data.map((c) => ({
+            title: c.name,
+            url: `/lecturer/courses/${c.id}`,
+          })),
+        );
+      })
+      .catch(() => {});
+  }, [authStore.user?.id]);
+
+  const data = {
+    user: {
+      name: authStore.user?.fullName,
+      email: authStore.user?.email,
+      avatar: authStore.user?.avatar,
+    },
+    teams: [
+      {
+        name: 'ONLEARN',
+        logo: GalleryVerticalEnd,
+        plan: 'Lecturer',
+      },
+    ],
+    navMain: [
+      {
+        title: 'Tổng quan',
+        url: '/lecturer/dashboard',
+        icon: PieChart,
+        isActive: true,
+      },
+      {
+        title: 'Quản lý khóa học',
+        url: '/lecturer/courses',
+        icon: BookOpen,
+        items: courseItems,
+      },
+      {
+        title: 'Đoạn chat',
+        url: '/lecturer/conversation',
+        icon: SquareTerminal,
+        items: [
+          { title: 'Hỏi về bài 1', url: '/lecturer/conversation/chat-1' },
+          { title: 'Phản hồi nội dung', url: '/lecturer/conversation/chat-2' },
+          { title: 'Yêu cầu hỗ trợ', url: '/lecturer/conversation/chat-3' },
+        ],
+      },
+      {
+        title: 'Giao dịch',
+        url: '/lecturer/transaction',
+        icon: Map,
+      },
+      {
+        title: 'Trang cá nhân',
+        url: '/lecturer/profile',
+        icon: Settings2,
+      },
+    ],
+    projects: [
+      {
+        name: 'Tài liệu',
+        url: '#',
+        icon: Frame,
+      },
+      {
+        name: 'Điều khoản sử dụng',
+        url: '#',
+        icon: PieChart,
+      },
+    ],
+  };
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -170,5 +123,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

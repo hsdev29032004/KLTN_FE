@@ -36,12 +36,12 @@ export const login = createAsyncThunk(
 
 export const register = createAsyncThunk(
   'auth/register',
-  async (data: { name: string; email: string; password: string }, { rejectWithValue }) => {
+  async (data: { name: string; email: string; password: string; role: "User" | "Teacher" }, { rejectWithValue }) => {
     try {
       const response = await SDK.getInstance().register(data)
       return response
     } catch (error) {
-      return rejectWithValue('Registration failed')
+      return rejectWithValue(error)
     }
   }
 )
