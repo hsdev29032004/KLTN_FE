@@ -42,7 +42,7 @@ export default async function Dashboard({
       <h1 className="text-2xl font-semibold">Tổng quan giảng viên</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
+        <Card className='py-3'>
           <CardHeader>
             <CardTitle>Khóa học</CardTitle>
           </CardHeader>
@@ -51,7 +51,7 @@ export default async function Dashboard({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='py-3'>
           <CardHeader>
             <CardTitle>Học viên</CardTitle>
           </CardHeader>
@@ -60,7 +60,7 @@ export default async function Dashboard({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='py-3'>
           <CardHeader>
             <CardTitle>Doanh thu</CardTitle>
           </CardHeader>

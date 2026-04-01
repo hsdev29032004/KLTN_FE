@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Search, ShoppingCart, Bell, Wallet, Moon, Sun } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,18 +18,39 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
-import { PaymentForm } from '../payment/payment-form';
-import { Dialog, DialogContent } from '../ui/dialog';
-import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { useBankStore } from '@/stores/bank/bank-store';
+import { useQRGenerator } from '@/hooks/use-qr-generator';
+import { Bank } from '@/types/bank.type';
+import { BankSelectionDialog } from '../payment/bank-selection-dialog';
+import { QRCodeDisplay } from '../payment/qr-code-display';
 import { formatMoney } from '@/helpers/format.helper';
 
 export function LandingHeader() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const authStore = useAuthStore();
-  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [showBankDialog, setShowBankDialog] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
+
+  const { list: banks, loading, fetchBanks } = useBankStore();
+  const { generateQR } = useQRGenerator();
 
   const user = authStore.user;
+
+  const paymentMessage = user?.id ? `ONLEARN_${user.id}` : 'ONLEARN';
+  const qrData = selectedBank ? generateQR(selectedBank, paymentMessage) : null;
+
+  useEffect(() => {
+    fetchBanks();
+  }, []);
+
+  const handleSelectBank = (bank: Bank) => {
+    setSelectedBank(bank);
+    setShowBankDialog(false);
+    setShowQRDialog(true);
+  };
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -88,7 +110,7 @@ export function LandingHeader() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowDepositDialog(true)}>
+                  <DropdownMenuItem onClick={() => setTimeout(() => setShowBankDialog(true), 0)}>
                     Nạp tiền
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -107,32 +129,16 @@ export function LandingHeader() {
                 </Link>
               </Button>
 
-              {/* Notifications */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Thông báo</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {/* Add notification items here */}
-                  <DropdownMenuItem>Chưa có thông báo mới</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               {/* User Profile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
+                    className="relative h-9 w-9 rounded-full"
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={user.avatarUrl || "/avatars/01.png"}
+                        src={user.avatar || "/avatars/01.png"}
                         alt={user.fullName}
                       />
                       <AvatarFallback>
@@ -141,8 +147,8 @@ export function LandingHeader() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
                         {user.fullName}
@@ -153,35 +159,70 @@ export function LandingHeader() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/profile")}>
-                    Trang cá nhân
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-courses">Khóa học của tôi</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/settings")}>
-                    Cài đặt
+                  <DropdownMenuItem asChild>
+                    <Link href="/transactions/history">Lịch sử giao dịch</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">Cài đặt tài khoản</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={handleLogout}
+                  >
                     Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.push("/login")}>
-                Đăng nhập
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/login">Đăng nhập</Link>
               </Button>
-              <Button onClick={() => router.push("/signup")}>Đăng ký</Button>
-            </div>
+              <Button asChild>
+                <Link href="/signup">Đăng ký</Link>
+              </Button>
+            </>
           )}
         </div>
       </div>
-      <Dialog open={showDepositDialog} onOpenChange={setShowDepositDialog}>
-        <DialogContent className="max-w-2xl">
-          <PaymentForm
-            type="deposit"
-            onCancel={() => setShowDepositDialog(false)}
-          />
+      <BankSelectionDialog
+        open={showBankDialog}
+        onOpenChange={setShowBankDialog}
+        onSelectBank={handleSelectBank}
+        banks={banks || []}
+        selectedBankId={selectedBank?.id}
+        loading={loading}
+      />
+
+      {/* QR Code Dialog */}
+      <Dialog
+        open={showQRDialog}
+        onOpenChange={(open) => {
+          setShowQRDialog(open);
+          if (!open) setSelectedBank(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedBank && qrData && (
+            <div>
+              <QRCodeDisplay
+                qrUrl={qrData.qrUrl}
+                displayUrl={qrData.displayUrl}
+                bankName={selectedBank.bankName}
+                bankNumber={selectedBank.bankNumber}
+                recipient={selectedBank.recipient}
+                phone=""
+                amount=""
+                message={paymentMessage}
+                type="deposit"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </header>

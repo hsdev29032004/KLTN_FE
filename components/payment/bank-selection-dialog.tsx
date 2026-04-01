@@ -27,10 +27,10 @@ export function BankSelectionDialog({
 }: BankSelectionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] sm:max-w-[500px]">
+      <DialogContent className="max-w-[90vw] md:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">
-            Chọn phương thức thanh toán
+            Chọn ngân hàng
           </DialogTitle>
         </DialogHeader>
 
