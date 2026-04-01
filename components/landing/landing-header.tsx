@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Search, ShoppingCart, Bell, Wallet, Moon, Sun } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,14 +18,39 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { useBankStore } from '@/stores/bank/bank-store';
+import { useQRGenerator } from '@/hooks/use-qr-generator';
+import { Bank } from '@/types/bank.type';
+import { BankSelectionDialog } from '../payment/bank-selection-dialog';
+import { QRCodeDisplay } from '../payment/qr-code-display';
 import { formatMoney } from '@/helpers/format.helper';
 
 export function LandingHeader() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const authStore = useAuthStore();
+  const [showBankDialog, setShowBankDialog] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
+
+  const { list: banks, loading, fetchBanks } = useBankStore();
+  const { generateQR } = useQRGenerator();
 
   const user = authStore.user;
+
+  const paymentMessage = user?.id ? `ONLEARN_${user.id}` : 'ONLEARN';
+  const qrData = selectedBank ? generateQR(selectedBank, paymentMessage) : null;
+
+  useEffect(() => {
+    fetchBanks();
+  }, []);
+
+  const handleSelectBank = (bank: Bank) => {
+    setSelectedBank(bank);
+    setShowBankDialog(false);
+    setShowQRDialog(true);
+  };
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -70,37 +96,54 @@ export function LandingHeader() {
 
           {user ? (
             <>
-              {/* Wallet */}
-              <div className="hidden md:flex items-center gap-2 rounded-md border px-3 py-2">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">
-                  {formatMoney(user.availableAmount || 0)}
-                </span>
-              </div>
+              {/* Wallet Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="hidden md:flex items-center gap-2"
+                  >
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold">
+                      {formatMoney(user.availableAmount || 0)}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setTimeout(() => setShowBankDialog(true), 0)}>
+                    Nạp tiền
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/withdrawal-demo")}
+                  >
+                    Rút tiền
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              {/* Shopping Cart */}
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
-                  0
-                </Badge>
+              {/* Cart */}
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/cart">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="sr-only">Giỏ hàng</span>
+                </Link>
               </Button>
 
-              {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-              </Button>
-
-              {/* User Menu */}
+              {/* User Profile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     className="relative h-9 w-9 rounded-full"
                   >
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.avatar} alt={user.fullName} />
-                      <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={user.avatar || "/avatars/01.png"}
+                        alt={user.fullName}
+                      />
+                      <AvatarFallback>
+                        {user.fullName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -147,6 +190,41 @@ export function LandingHeader() {
           )}
         </div>
       </div>
+      <BankSelectionDialog
+        open={showBankDialog}
+        onOpenChange={setShowBankDialog}
+        onSelectBank={handleSelectBank}
+        banks={banks || []}
+        selectedBankId={selectedBank?.id}
+        loading={loading}
+      />
+
+      {/* QR Code Dialog */}
+      <Dialog
+        open={showQRDialog}
+        onOpenChange={(open) => {
+          setShowQRDialog(open);
+          if (!open) setSelectedBank(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedBank && qrData && (
+            <div>
+              <QRCodeDisplay
+                qrUrl={qrData.qrUrl}
+                displayUrl={qrData.displayUrl}
+                bankName={selectedBank.bankName}
+                bankNumber={selectedBank.bankNumber}
+                recipient={selectedBank.recipient}
+                phone=""
+                amount=""
+                message={paymentMessage}
+                type="deposit"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

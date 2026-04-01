@@ -132,7 +132,7 @@ export function RevenueChart({
   }
 
   return (
-    <Card>
+    <Card className='py-3'>
       <CardHeader className="flex mb-10 items-center justify-between">
         <CardTitle>Doanh thu theo ngày</CardTitle>
         <div>
