@@ -17,6 +17,7 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
+import { formatMoney } from '@/helpers/format.helper';
 
 export function LandingHeader() {
   const { theme, setTheme } = useTheme();
@@ -24,13 +25,6 @@ export function LandingHeader() {
   const authStore = useAuthStore();
 
   const user = authStore.user;
-
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount);
-  };
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');

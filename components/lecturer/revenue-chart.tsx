@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -68,6 +69,46 @@ function buildChartData(invoiceDetails: InvoiceDetail[]) {
     .map(([date, revenue]) => ({ date, revenue }));
 }
 
+function exportToExcel(invoiceDetails: InvoiceDetail[], startDate: string, endDate: string) {
+  // Format data for Excel
+  const excelData = invoiceDetails.map((invoice) => ({
+    'ID Hóa đơn': invoice.id,
+    'Tên khóa học': invoice.courses.name,
+    'Giá': invoice.price,
+    'Trạng thái': invoice.status,
+    'Ngày tạo': format(new Date(invoice.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: vi }),
+  }));
+
+  // Create workbook and worksheet
+  const ws = XLSX.utils.json_to_sheet(excelData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Doanh thu');
+
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 38 },
+    { wch: 50 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 20 },
+  ];
+
+  // Format currency for price column
+  const priceColumnIndex = 2;
+  for (let i = 2; i <= excelData.length + 1; i++) {
+    const cellRef = XLSX.utils.encode_cell({ r: i, c: priceColumnIndex });
+    if (ws[cellRef]) {
+      ws[cellRef].z = '#,##0';
+    }
+  }
+
+  // Generate filename with date range
+  const fileName = `Doanh_thu_${format(new Date(startDate), 'dd-MM-yyyy')}_${format(new Date(endDate), 'dd-MM-yyyy')}.xlsx`;
+
+  // Write file
+  XLSX.writeFile(wb, fileName);
+}
+
 export function RevenueChart({
   invoiceDetails,
   startDate,
@@ -94,30 +135,33 @@ export function RevenueChart({
     <Card>
       <CardHeader className="flex mb-10 items-center justify-between">
         <CardTitle>Doanh thu theo ngày</CardTitle>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn('w-70 justify-start text-left font-normal')}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {format(dateRange.from!, 'dd/MM/yyyy', { locale: vi })}
-              {' – '}
-              {format(dateRange.to!, 'dd/MM/yyyy', { locale: vi })}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <Calendar
-              initialFocus
-              mode="range"
-              locale={vi}
-              defaultMonth={dateRange.from}
-              selected={dateRange}
-              onSelect={handleDateChange}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
+        <div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn('w-70 justify-start text-left font-normal')}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateRange.from!, 'dd/MM/yyyy', { locale: vi })}
+                {' – '}
+                {format(dateRange.to!, 'dd/MM/yyyy', { locale: vi })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                locale={vi}
+                defaultMonth={dateRange.from}
+                selected={dateRange}
+                onSelect={handleDateChange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button className='ml-2' onClick={() => exportToExcel(invoiceDetails, startDate, endDate)}>Xuất file</Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
