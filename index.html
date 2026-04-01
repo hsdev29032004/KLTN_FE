@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoMo QR Generator</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        text-align: center;
+        color: #d82d8b;
+        margin-bottom: 10px;
+        font-size: 32px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 15px;
+        transition: all 0.3s;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #d82d8b;
+        box-shadow: 0 0 0 3px rgba(216, 45, 139, 0.1);
+      }
+
+      .btn {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #d82d8b 0%, #a02165 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(216, 45, 139, 0.3);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .result {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        display: none;
+      }
+
+      .result.show {
+        display: block;
+      }
+
+      .result-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .qr-display {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        word-break: break-all;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 15px;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 100px 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .info-label {
+        font-weight: 600;
+        color: #666;
+      }
+
+      .info-value {
+        color: #333;
+      }
+
+      .copy-btn {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        width: 100%;
+      }
+
+      .copy-btn:hover {
+        background: #45a049;
+      }
+
+      .copy-btn.copied {
+        background: #2196f3;
+      }
+
+      .qr-image {
+        text-align: center;
+        margin: 20px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+      }
+
+      .qr-image img {
+        max-width: 300px;
+        width: 100%;
+        height: auto;
+        border: 3px solid #d82d8b;
+        border-radius: 10px;
+        padding: 10px;
+        background: white;
+      }
+
+      .example {
+        background: #fff3cd;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid #ffc107;
+      }
+
+      .example-title {
+        font-weight: 600;
+        color: #856404;
+        margin-bottom: 8px;
+      }
+
+      .example-code {
+        font-family: "Courier New", monospace;
+        color: #856404;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>🎯 MoMo QR Generator</h1>
+      <p class="subtitle">Tạo mã QR MoMo thanh toán với VietQR API</p>
+
+      <div class="example">
+        <div class="example-title">📝 Ví dụ:</div>
+        <div class="example-code">0326161319|50000|dophuchung</div>
+      </div>
+
+      <div class="input-group">
+        <label for="phone">📱 Số điện thoại nhận</label>
+        <input type="text" id="phone" placeholder="0326161319" />
+      </div>
+
+      <div class="input-group">
+        <label for="amount">💰 Số tiền (VNĐ)</label>
+        <input type="number" id="amount" placeholder="50000" />
+      </div>
+
+      <div class="input-group">
+        <label for="message">💬 Lời nhắn (tùy chọn)</label>
+        <input type="text" id="message" placeholder="dophuchung" />
+      </div>
+
+      <div class="input-group">
+        <label for="bank">🏦 Ngân hàng</label>
+        <select id="bank">
+          <option value="970436">Vietcombank (VCB)</option>
+          <option value="momo">MoMo</option>
+        </select>
+      </div>
+
+      <button class="btn" onclick="generateQR()">✨ Tạo QR MoMo</button>
+
+      <div class="result" id="result">
+        <div class="result-title">✅ Kết quả:</div>
+
+        <div class="info-grid">
+          <div class="info-label">Phone:</div>
+          <div class="info-value" id="resultPhone">-</div>
+
+          <div class="info-label">Amount:</div>
+          <div class="info-value" id="resultAmount">-</div>
+
+          <div class="info-label">Message:</div>
+          <div class="info-value" id="resultMessage">-</div>
+        </div>
+
+        <div class="qr-image">
+          <img id="qrImage" src="" alt="QR Code" />
+          <p style="color: #666; font-size: 12px; margin-top: 10px">
+            Quét mã QR này bằng MoMo để thanh toán
+          </p>
+        </div>
+
+        <div class="result-title">🔗 VietQR Link:</div>
+        <div class="qr-display" id="vietqrUrl">-</div>
+        <button class="copy-btn" onclick="copy('vietqrUrl', this)">
+          📋 Copy Link
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Generate MoMo QR using VietQR API
+      function generateQR() {
+        const phone = document.getElementById("phone").value.trim();
+        const amount = document.getElementById("amount").value.trim();
+        const message = document.getElementById("message").value.trim();
+        const bankCode = document.getElementById("bank").value;
+
+        if (!phone || !amount) {
+          alert("⚠️ Vui lòng nhập đủ số điện thoại và số tiền!");
+          return;
+        }
+
+        // Clean account number (không tự thêm số 0)
+        const cleanAccount = phone.replace(/\D/g, "");
+
+        let qrUrl = "";
+        let displayUrl = "";
+        let accountName = "";
+        let addInfo = encodeURIComponent(message || "Chuyen tien");
+
+        if (bankCode === "970436") {
+          // VCB
+          accountName = encodeURIComponent("VCB_" + cleanAccount);
+          qrUrl = `https://img.vietqr.io/image/${bankCode}-${cleanAccount}-compact2.jpg?addInfo=${addInfo}&accountName=${accountName}`;
+          displayUrl = qrUrl;
+        } else if (bankCode === "momo") {
+          // MoMo
+          // MoMo deeplink: momo://?action=transfer&receiver=<phone>&amount=<amount>&comment=<message>
+          const momoLink = `momo://?action=transfer&receiver=${cleanAccount}&comment=${encodeURIComponent(message)}`;
+          // Use Google Chart API to generate QR from deeplink
+          qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(momoLink)}`;
+          displayUrl = momoLink;
+        }
+
+        document.getElementById("resultPhone").textContent = cleanAccount;
+        document.getElementById("resultAmount").textContent = amount + " VNĐ";
+        document.getElementById("resultMessage").textContent =
+          message || "(không có)";
+        document.getElementById("vietqrUrl").textContent = displayUrl || "-";
+        document.getElementById("qrImage").src = qrUrl || "";
+        document.getElementById("result").classList.add("show");
+      }
+
+      // Copy to clipboard
+      function copy(elementId, button) {
+        const text = document.getElementById(elementId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const originalText = button.textContent;
+          button.textContent = "✅ Đã copy!";
+          button.classList.add("copied");
+
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove("copied");
+          }, 2000);
+        });
+      }
+    </script>
+  </body>
+</html>

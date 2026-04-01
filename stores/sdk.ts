@@ -1,11 +1,15 @@
 import { AuthRequest } from "./auth/auth-request";
 import { Base } from "./base";
 import { CourseRequest } from "./course/course-request";
+import { BankRequest } from "./bank/bank-request";
 
 function applyMixins(derivedCtor: any, baseCtors: any[]) {
   baseCtors.forEach((baseCtor) => {
     Object.getOwnPropertyNames(baseCtor.prototype).forEach((name) => {
-      const descriptor = Object.getOwnPropertyDescriptor(baseCtor.prototype, name);
+      const descriptor = Object.getOwnPropertyDescriptor(
+        baseCtor.prototype,
+        name,
+      );
       if (descriptor) {
         Object.defineProperty(derivedCtor.prototype, name, descriptor);
       }
@@ -20,7 +24,7 @@ class SDK extends Base {
 
   private static _instance: SDK;
   public static getInstance(): SDK {
-    const isClientSide = typeof window !== 'undefined';
+    const isClientSide = typeof window !== "undefined";
     if (!isClientSide) {
       throw new Error("SDK singleton is only available on the client side.");
     }
@@ -30,19 +34,13 @@ class SDK extends Base {
     return this._instance;
   }
 
-  public static setInstance(
-    access_token?: string,
-    refresh_token?: string,
-  ) {
+  public static setInstance(access_token?: string, refresh_token?: string) {
     this._instance = new this(access_token, refresh_token);
     this._instance.updateTokens(access_token, refresh_token);
   }
 }
 
-interface SDK
-  extends
-  AuthRequest,
-  CourseRequest { }
-applyMixins(SDK, [AuthRequest, CourseRequest]);
+interface SDK extends AuthRequest, CourseRequest, BankRequest {}
+applyMixins(SDK, [AuthRequest, CourseRequest, BankRequest]);
 
 export default SDK;

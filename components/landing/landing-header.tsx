@@ -17,11 +17,15 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth/auth-store";
+import { PaymentForm } from "../payment/payment-form";
+import { Dialog, DialogContent } from "../ui/dialog";
+import { useState } from "react";
 
 export function LandingHeader() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const authStore = useAuthStore();
+  const [showDepositDialog, setShowDepositDialog] = useState(false);
 
   const user = authStore.user;
 
@@ -76,42 +80,75 @@ export function LandingHeader() {
 
           {user ? (
             <>
-              {/* Wallet */}
-              <div className="hidden md:flex items-center gap-2 rounded-md border px-3 py-2">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">
-                  {formatMoney(user.availableAmount || 0)}
-                </span>
-              </div>
-
-              {/* Shopping Cart */}
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
-                  0
-                </Badge>
-              </Button>
-
-              {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-              </Button>
-
-              {/* User Menu */}
+              {/* Wallet Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-9 w-9 rounded-full"
+                    className="hidden md:flex items-center gap-2"
                   >
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.avatar} alt={user.fullName} />
-                      <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold">
+                      {formatMoney(user.availableAmount || 0)}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowDepositDialog(true)}>
+                    Nạp tiền
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/withdrawal-demo")}
+                  >
+                    Rút tiền
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Cart */}
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/cart">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="sr-only">Giỏ hàng</span>
+                </Link>
+              </Button>
+
+              {/* Notifications */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-5 w-5" />
+                    <span className="sr-only">Thông báo</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {/* Add notification items here */}
+                  <DropdownMenuItem>Chưa có thông báo mới</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* User Profile */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={user.avatarUrl || "/avatars/01.png"}
+                        alt={user.fullName}
+                      />
+                      <AvatarFallback>
+                        {user.fullName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
                         {user.fullName}
@@ -122,37 +159,37 @@ export function LandingHeader() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/my-courses">Khóa học của tôi</Link>
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
+                    Trang cá nhân
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/transactions/history">Lịch sử giao dịch</Link>
+                  <DropdownMenuItem onClick={() => router.push("/settings")}>
+                    Cài đặt
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">Cài đặt tài khoản</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={handleLogout}
-                  >
+                  <DropdownMenuItem onClick={handleLogout}>
                     Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <>
-              <Button variant="ghost" asChild>
-                <Link href="/login">Đăng nhập</Link>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => router.push("/login")}>
+                Đăng nhập
               </Button>
-              <Button asChild>
-                <Link href="/signup">Đăng ký</Link>
-              </Button>
-            </>
+              <Button onClick={() => router.push("/signup")}>Đăng ký</Button>
+            </div>
           )}
         </div>
       </div>
+      <Dialog open={showDepositDialog} onOpenChange={setShowDepositDialog}>
+        <DialogContent className="max-w-2xl">
+          <PaymentForm
+            type="deposit"
+            onCancel={() => setShowDepositDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
