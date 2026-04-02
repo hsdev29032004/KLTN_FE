@@ -57,7 +57,7 @@ export function BankSelectionDialog({
                     : "border-border hover:border-primary/50"
                 }`}
               >
-                <span className="text-xl sm:text-2xl">🏦</span>
+                <span className="text-xl sm:text-2xl"></span>
                 <div className="flex-1 text-left min-w-0">
                   <p className="font-semibold text-xs sm:text-sm line-clamp-1">
                     {bank.bankName}
