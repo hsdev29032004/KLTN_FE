@@ -30,11 +30,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [courseItems, setCourseItems] = React.useState<
     { title: string; url: string }[]
   >([]);
+  const [chatItems, setChatItems] = React.useState<
+    { title: string; url: string }[]
+  >([]);
 
   React.useEffect(() => {
     const userId = authStore.user?.id;
     if (!userId) return;
 
+    // Fetch courses
     SDK.getInstance()
       .getCourseByUserId(userId)
       .then((res) => {
@@ -42,6 +46,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           res.data.map((c) => ({
             title: c.name,
             url: `/lecturer/courses/${c.id}`,
+          })),
+        );
+      })
+      .catch(() => {});
+
+    // Fetch conversations
+    SDK.getInstance()
+      .getInstructorConversations(userId)
+      .then((res) => {
+        setChatItems(
+          res.data.map((conversation: any) => ({
+            title: conversation.name,
+            url: `/lecturer/conversation/${conversation.id}`,
           })),
         );
       })
@@ -78,11 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Đoạn chat',
         url: '/lecturer/conversation',
         icon: SquareTerminal,
-        items: [
-          { title: 'Hỏi về bài 1', url: '/lecturer/conversation/chat-1' },
-          { title: 'Phản hồi nội dung', url: '/lecturer/conversation/chat-2' },
-          { title: 'Yêu cầu hỗ trợ', url: '/lecturer/conversation/chat-3' },
-        ],
+        items: chatItems,
       },
       {
         title: 'Giao dịch',

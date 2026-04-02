@@ -1,9 +1,10 @@
-import { AuthRequest } from "./auth/auth-request";
-import { Base } from "./base";
-import { CourseRequest } from "./course/course-request";
-import { BankRequest } from "./bank/bank-request";
-import { PurchaseRequest } from "./purchase/purchase-request";
-import { StatRequest } from "./stat/stat-request";
+import { AuthRequest } from './auth/auth-request';
+import { Base } from './base';
+import { CourseRequest } from './course/course-request';
+import { BankRequest } from './bank/bank-request';
+import { PurchaseRequest } from './purchase/purchase-request';
+import { StatRequest } from './stat/stat-request';
+import { ConversationRequest } from './conservation/conservation-request';
 
 function applyMixins(derivedCtor: any, baseCtors: any[]) {
   baseCtors.forEach((baseCtor) => {
@@ -26,9 +27,9 @@ class SDK extends Base {
 
   private static _instance: SDK;
   public static getInstance(): SDK {
-    const isClientSide = typeof window !== "undefined";
+    const isClientSide = typeof window !== 'undefined';
     if (!isClientSide) {
-      throw new Error("SDK singleton is only available on the client side.");
+      throw new Error('SDK singleton is only available on the client side.');
     }
     if (!this._instance) {
       this._instance = new this();
@@ -48,13 +49,15 @@ interface SDK
     CourseRequest,
     BankRequest,
     PurchaseRequest,
-    StatRequest {}
+    StatRequest,
+    ConversationRequest {}
 applyMixins(SDK, [
   AuthRequest,
   CourseRequest,
   BankRequest,
   PurchaseRequest,
   StatRequest,
+  ConversationRequest,
 ]);
 
 export default SDK;
