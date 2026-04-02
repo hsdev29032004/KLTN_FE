@@ -64,7 +64,10 @@ export default function ConversationPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div
+      className="flex flex-col overflow-hidden"
+      style={{ height: 'calc(100dvh - var(--header-height) - 20px)' }}
+    >
       <ConversationDetailView conversation={conversation} />
     </div>
   );
