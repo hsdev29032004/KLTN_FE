@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux'
-import { fetchBanks, setList, clearList } from './bank-slice'
+import { fetchBanks, createBank, updateBank, deleteBank, setList, clearList } from './bank-slice'
 import type { RootState } from '@/stores/store'
 import { useAppDispatch } from '@/hooks/use-app-dispatch'
 import type { Bank } from '@/types/bank.type'
@@ -15,6 +15,9 @@ export function useBankStore() {
     loading,
     error,
     fetchBanks: () => dispatch(fetchBanks()),
+    createBank: (data: Omit<Bank, 'id' | 'createdAt' | 'updatedAt'>) => dispatch(createBank(data)),
+    updateBank: (id: string, data: Partial<Omit<Bank, 'id' | 'createdAt' | 'updatedAt'>>) => dispatch(updateBank({ id, data })),
+    deleteBank: (id: string) => dispatch(deleteBank(id)),
     setList: (items: Bank[]) => dispatch(setList(items)),
     clearList: () => dispatch(clearList()),
   }

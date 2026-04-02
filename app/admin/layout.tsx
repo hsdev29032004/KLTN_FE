@@ -1,6 +1,6 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SiteHeader } from "@/components/layouts/site-header";
-import { AppSidebar } from "@/components/layouts/app-sidebar";
+import { AdminSiteHeader } from "@/components/layouts/admin-site-header";
+import { AdminSidebar } from "@/components/layouts/admin-sidebar";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,9 +12,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AdminSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <AdminSiteHeader />
         {children}
       </SidebarInset>
     </SidebarProvider>
