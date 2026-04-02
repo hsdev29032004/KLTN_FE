@@ -1,17 +1,19 @@
-import { useSelector } from 'react-redux'
+import { useSelector } from 'react-redux';
 import {
   setCourseSelected,
   addCourseSelected,
   removeCourseSelected,
   clearCourseSelected,
-  purchaseCourse
-} from './purchase-slice'
-import type { RootState } from '@/stores/store'
-import { useAppDispatch } from '@/hooks/use-app-dispatch'
+  purchaseCourse,
+} from './purchase-slice';
+import type { RootState } from '@/stores/store';
+import { useAppDispatch } from '@/hooks/use-app-dispatch';
 
 export function usePurchaseStore() {
-  const dispatch = useAppDispatch()
-  const courseSelected = useSelector((state: RootState) => state.purchase?.courseSelected)
+  const dispatch = useAppDispatch();
+  const courseSelected = useSelector(
+    (state: RootState) => state.purchase?.courseSelected,
+  );
 
   return {
     courseSelected,
@@ -19,6 +21,7 @@ export function usePurchaseStore() {
     addCourseSelected: (id: string) => dispatch(addCourseSelected(id)),
     removeCourseSelected: (id: string) => dispatch(removeCourseSelected(id)),
     clearCourseSelected: () => dispatch(clearCourseSelected()),
-    purchaseCourse: async (courseIds: string[]) => dispatch(purchaseCourse(courseIds)),
-  }
+    purchaseCourse: async (courseIds: string[]) =>
+      dispatch(purchaseCourse(courseIds)),
+  };
 }

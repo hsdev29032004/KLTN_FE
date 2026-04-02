@@ -110,11 +110,13 @@ export function LandingHeader() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setTimeout(() => setShowBankDialog(true), 0)}>
+                  <DropdownMenuItem
+                    onClick={() => setTimeout(() => setShowBankDialog(true), 0)}
+                  >
                     Nạp tiền
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => router.push("/withdrawal-demo")}
+                    onClick={() => router.push('/withdrawal-demo')}
                   >
                     Rút tiền
                   </DropdownMenuItem>
@@ -138,7 +140,7 @@ export function LandingHeader() {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={user.avatar || "/avatars/01.png"}
+                        src={user.avatar || '/avatars/01.png'}
                         alt={user.fullName}
                       />
                       <AvatarFallback>
