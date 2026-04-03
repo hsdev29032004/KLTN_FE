@@ -57,7 +57,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         icon: BookOpen,
       },
       {
-        title: 'Quản lý giao dịch',
+        title: 'Doanh thu',
         url: '/admin/managements/transactions',
         icon: CreditCard,
       },

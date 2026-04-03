@@ -98,7 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items: chatItems,
       },
       {
-        title: 'Giao dịch',
+        title: 'Doanh thu',
         url: '/lecturer/transaction',
         icon: Map,
       },
