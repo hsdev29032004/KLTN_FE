@@ -31,7 +31,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
     return (
       <Editor
-        tinymceScriptSrc="https://cdn.jsdelivr.net/npm/tinymce@5/tinymce.min.js"
+        tinymceScriptSrc="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"
         onInit={(_evt, editor) => (editorRef.current = editor)}
         initialValue={initialValue}
         init={{
@@ -40,6 +40,8 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
           branding: false,
           paste_data_images: true,
           placeholder,
+          popup_container: typeof window !== "undefined" ? document.body : undefined,
+          z_index: 9999,
           plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',

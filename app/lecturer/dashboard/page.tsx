@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { useSdk } from '@/hooks/use-my-cookies';
 import { RevenueChart } from '@/components/lecturer/revenue-chart';
+import { CreateCourseButton } from '@/components/lecturer/create-course-button';
 
 function formatCurrency(v: number) {
   return v.toLocaleString('vi-VN') + ' ₫';
@@ -79,7 +80,10 @@ export default async function Dashboard({
       />
 
       <section>
-        <h2 className="text-lg font-medium">Danh sách khóa học</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Danh sách khóa học</h2>
+          <CreateCourseButton />
+        </div>
 
         <div className="mt-4">
           <Table>

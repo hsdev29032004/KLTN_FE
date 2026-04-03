@@ -1,15 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { Eye, Pencil, Trash2, Send } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Eye, Pencil, Trash2, Send, Plus, X, Save, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import DOMPurify from "dompurify";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import MediaModal from '@/components/media-modal';
+import { RichTextEditor, RichTextEditorRef } from '@/components/common/rich-text-editor';
 import { useCourseStore } from '@/stores/course/course-store';
 import { useAppStore } from '@/stores/app/app-store';
+import SDK from '@/stores/sdk';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -17,6 +31,7 @@ interface Material {
   id: string;
   name: string;
   type: string;
+  url?: string;
   isPreview: boolean;
   status: string;
   createdAt: string;
@@ -30,24 +45,29 @@ interface Lesson {
   materials: Material[];
 }
 
+interface CourseData {
+  id: string;
+  name: string;
+  status: string;
+  thumbnail: string;
+  content?: string | null;
+  description?: string | null;
+  price: number;
+  lessons: Lesson[];
+}
+
 interface CourseManagementProps {
-  course: {
-    id: string;
-    name: string;
-    status: string;
-    thumbnail: string;
-    description?: string | null;
-    lessons: Lesson[];
-  };
+  course: CourseData;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  published:      { label: 'Đã duyệt',      className: 'bg-green-100 text-green-700 border-green-300' },
-  pending:        { label: 'Chờ duyệt',     className: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-  draft:          { label: 'Nháp',           className: 'bg-orange-100 text-orange-700 border-orange-300' },
-  'delete-pending': { label: 'Chờ xóa',     className: 'bg-red-100 text-red-700 border-red-300' },
+  published:  { label: 'Đã duyệt',  className: 'bg-green-100 text-green-700 border-green-300' },
+  pending:    { label: 'Chờ duyệt', className: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
+  draft:      { label: 'Nháp',      className: 'bg-orange-100 text-orange-700 border-orange-300' },
+  outdated:   { label: 'Outdated',        className: 'bg-gray-100 text-gray-600 border-gray-300' },
+  update:     { label: 'Chờ cập nhật', className: 'bg-blue-100 text-blue-700 border-blue-300' },
 };
 
 const MATERIAL_ICON: Record<string, string> = {
@@ -66,57 +86,281 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ─── Confirm Dialog ───────────────────────────────────────────────────────────
+
+function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  description,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  title: string;
+  description: string;
+}) {
+  const [loading, setLoading] = useState(false);
+  const handleConfirm = async () => {
+    setLoading(true);
+    try { await onConfirm(); onClose(); } finally { setLoading(false); }
+  };
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">{description}</p>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button variant="destructive" onClick={handleConfirm} disabled={loading}>
+            {loading ? 'Đang xử lý...' : 'Xác nhận'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Edit Course Dialog ───────────────────────────────────────────────────────
+
+function EditCourseDialog({
+  open,
+  onClose,
+  course,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  course: CourseData;
+  onSaved: (data: any) => void;
+}) {
+  const [name, setName] = useState(course.name);
+  const [price, setPrice] = useState(String(course.price));
+  const [thumbnail, setThumbnail] = useState(course.thumbnail);
+  const [contentParts, setContentParts] = useState<string[]>(
+    course.content ? course.content.split('|') : ['']
+  );
+  const descRef = useRef<RichTextEditorRef>(null);
+  const [loading, setLoading] = useState(false);
+
+  const addContentPart = () => setContentParts((prev) => [...prev, '']);
+  const removeContentPart = (idx: number) =>
+    setContentParts((prev) => prev.filter((_, i) => i !== idx));
+  const updateContentPart = (idx: number, value: string) =>
+    setContentParts((prev) => prev.map((v, i) => (i === idx ? value : v)));
+
+  const handleSubmit = async () => {
+    if (!name.trim()) { toast.error('Tên khóa học không được trống'); return; }
+    setLoading(true);
+    try {
+      const content = contentParts.filter((p) => p.trim()).join('|');
+      const description = descRef.current?.getContent() ?? '';
+      const sdk = SDK.getInstance();
+      const res = await sdk.updateCourse(course.id, {
+        name: name.trim(),
+        price: Number(price),
+        thumbnail: thumbnail.trim(),
+        content,
+        description,
+      });
+      const data = (res as any).data || res;
+      toast.success('Đã cập nhật khóa học');
+      onSaved(data);
+      onClose();
+    } catch { /* interceptor */ } finally { setLoading(false); }
+  };
+
+  return (
+    <Dialog open={open} modal={false} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Chỉnh sửa khóa học</DialogTitle></DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label>Tên khóa học</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-1.5">
+              <Label>Giá (VNĐ)</Label>
+              <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Thumbnail URL</Label>
+              <Input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <div className="flex items-center justify-between">
+              <Label>Nội dung (content)</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addContentPart}>
+                <Plus className="mr-1 h-3 w-3" /> Thêm mục
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {contentParts.map((part, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <Input value={part} onChange={(e) => updateContentPart(idx, e.target.value)} placeholder={`Nội dung ${idx + 1}`} />
+                  {contentParts.length > 1 && (
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => removeContentPart(idx)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Mô tả</Label>
+            <RichTextEditor ref={descRef} initialValue={course.description ?? ''} height={250} placeholder="Nhập mô tả khóa học..." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            <Save className="mr-1 h-4 w-4" />{loading ? 'Đang lưu...' : 'Lưu'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Lesson Dialog (create / edit) ────────────────────────────────────────────
+
+function LessonDialog({
+  open,
+  onClose,
+  initial,
+  onSave,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initial?: { id: string; name: string };
+  onSave: (name: string, id?: string) => Promise<void>;
+}) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) { toast.error('Tên bài học không được trống'); return; }
+    setLoading(true);
+    try { await onSave(name.trim(), initial?.id); onClose(); } finally { setLoading(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{initial ? 'Sửa bài học' : 'Thêm bài học'}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label>Tên bài học</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nhập tên bài học" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            <Save className="mr-1 h-4 w-4" />{loading ? 'Đang lưu...' : 'Lưu'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Material Dialog (create / edit) ──────────────────────────────────────────
+
+function MaterialDialog({
+  open,
+  onClose,
+  initial,
+  onSave,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initial?: { id: string; name: string; url?: string; type?: string };
+  onSave: (data: { name: string; url: string; type?: string }, id?: string) => Promise<void>;
+}) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [url, setUrl] = useState(initial?.url ?? '');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !url.trim()) { toast.error('Vui lòng điền đầy đủ thông tin'); return; }
+    setLoading(true);
+    try { await onSave({ name: name.trim(), url: url.trim() }, initial?.id); onClose(); } finally { setLoading(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{initial ? 'Sửa tài liệu' : 'Thêm tài liệu'}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label>Tên tài liệu</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nhập tên tài liệu" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>URL</Label>
+            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            <Save className="mr-1 h-4 w-4" />{loading ? 'Đang lưu...' : 'Lưu'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Material Item ────────────────────────────────────────────────────────────
 
 function MaterialItem({
   material,
   onView,
+  onEdit,
+  onDelete,
+  onRestore,
 }: {
   material: Material;
   onView: (material: Material) => void;
+  onEdit: (material: Material) => void;
+  onDelete: (material: Material) => void;
+  onRestore: (material: Material) => void;
 }) {
-  const isDeleted = material.status === 'delete-pending';
+  const isOutdated = material.status === 'outdated';
 
   return (
-    <div
-      className={`flex items-center justify-between rounded-md px-3 py-2 bg-muted/40 ${
-        isDeleted ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-    >
+    <div className="flex items-center justify-between rounded-md px-3 py-2 bg-muted/40">
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-base">{MATERIAL_ICON[material.type] ?? '📄'}</span>
-        <span className="text-sm truncate">{material.name}</span>
+        <span className={`text-sm truncate ${isOutdated ? 'line-through text-muted-foreground' : ''}`}>{material.name}</span>
         <StatusBadge status={material.status} />
       </div>
       <div className="flex items-center gap-1 ml-2 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          disabled={isDeleted}
-          onClick={() => !isDeleted && onView(material)}
-          title="Xem"
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView(material)} title="Xem">
           <Eye className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          disabled={isDeleted}
-          title="Sửa"
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(material)} title="Sửa">
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-destructive hover:text-destructive"
-          disabled={isDeleted}
-          title="Xóa"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {isOutdated ? (
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" onClick={() => onRestore(material)} title="Khôi phục">
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(material)} title="Xóa">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -128,24 +372,33 @@ function LessonItem({
   lesson,
   defaultOpen,
   onView,
+  onEditLesson,
+  onDeleteLesson,
+  onRestoreLesson,
+  onAddMaterial,
+  onEditMaterial,
+  onDeleteMaterial,
+  onRestoreMaterial,
 }: {
   lesson: Lesson;
   defaultOpen?: boolean;
   onView: (material: Material) => void;
+  onEditLesson: (lesson: Lesson) => void;
+  onDeleteLesson: (lesson: Lesson) => void;
+  onRestoreLesson: (lesson: Lesson) => void;
+  onAddMaterial: (lessonId: string) => void;
+  onEditMaterial: (material: Material) => void;
+  onDeleteMaterial: (material: Material) => void;
+  onRestoreMaterial: (material: Material) => void;
 }) {
+  const isOutdated = lesson.status === 'outdated';
   const [open, setOpen] = useState(defaultOpen ?? false);
-  const isDeleted = lesson.status === 'delete-pending';
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <Card className={`overflow-hidden ${isDeleted ? 'opacity-50' : ''}`}>
+      <Card className="overflow-hidden">
         <CollapsibleTrigger asChild>
-          <div
-            className={`flex items-center justify-between p-4 hover:bg-muted/30 transition-colors ${
-              isDeleted ? 'cursor-not-allowed' : 'cursor-pointer'
-            }`}
-            onClick={(e) => isDeleted && e.preventDefault()}
-          >
+          <div className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors cursor-pointer">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
               <div className="min-w-0">
@@ -157,26 +410,25 @@ function LessonItem({
               <StatusBadge status={lesson.status} />
             </div>
             <div className="flex items-center gap-1 ml-3 shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                disabled={isDeleted}
-                title="Sửa"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Thêm tài liệu"
+                onClick={(e) => { e.stopPropagation(); onAddMaterial(lesson.id); }}>
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Sửa"
+                onClick={(e) => { e.stopPropagation(); onEditLesson(lesson); }}>
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive"
-                disabled={isDeleted}
-                title="Xóa"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isOutdated ? (
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:text-blue-600" title="Khôi phục"
+                  onClick={(e) => { e.stopPropagation(); onRestoreLesson(lesson); }}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Xóa"
+                  onClick={(e) => { e.stopPropagation(); onDeleteLesson(lesson); }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CollapsibleTrigger>
@@ -185,7 +437,7 @@ function LessonItem({
           <CardContent className="border-t p-3 space-y-2">
             {lesson.materials.length > 0 ? (
               lesson.materials.map((m) => (
-                <MaterialItem key={m.id} material={m} onView={onView} />
+                <MaterialItem key={m.id} material={m} onView={onView} onEdit={onEditMaterial} onDelete={onDeleteMaterial} onRestore={onRestoreMaterial} />
               ))
             ) : (
               <p className="text-sm text-muted-foreground py-1">Chưa có tài liệu</p>
@@ -206,25 +458,35 @@ interface MediaState {
   title: string;
 }
 
-export function CourseManagement({ course }: CourseManagementProps) {
+export function CourseManagement({ course: initialCourse }: CourseManagementProps) {
   const courseStore = useCourseStore();
   const appStore = useAppStore();
+  const router = useRouter();
+  const sdk = SDK.getInstance();
+
+  const [course, setCourse] = useState<CourseData>(initialCourse);
   const [media, setMedia] = useState<MediaState>({ open: false, type: '', url: '', title: '' });
+
+  // Dialog states
+  const [editCourseOpen, setEditCourseOpen] = useState(false);
+  const [lessonDialog, setLessonDialog] = useState<{ open: boolean; lesson?: Lesson }>({ open: false });
+  const [materialDialog, setMaterialDialog] = useState<{ open: boolean; lessonId?: string; material?: Material }>({ open: false });
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => Promise<void> }>({
+    open: false, title: '', description: '', onConfirm: async () => {},
+  });
+
+  // ── View Material ────────────────────────────────────────────────────────
 
   const handleView = async (material: Material) => {
     if (material.type !== 'img' && material.type !== 'video') {
-      // Open other types in new tab
       try {
         const res: any = await courseStore.fetchMaterialUrl(material.id);
         const payload = res?.payload ?? res;
         const url = payload?.url ?? payload;
         window.open(url, '_blank');
-      } catch (e) {
-        console.error('view error', e);
-      }
+      } catch (e) { console.error('view error', e); }
       return;
     }
-
     try {
       const res: any = await courseStore.fetchMaterialUrl(material.id);
       const payload = res?.payload ?? res;
@@ -232,9 +494,128 @@ export function CourseManagement({ course }: CourseManagementProps) {
       const token = payload?.token;
       appStore.setEncryptUrl(token ?? '');
       setMedia({ open: true, type: material.type, url, title: material.name });
-    } catch (e) {
-      console.error('view error', e);
+    } catch (e) { console.error('view error', e); }
+  };
+
+  // ── Course actions ───────────────────────────────────────────────────────
+
+  const handleCourseSaved = (data: any) => {
+    setCourse((prev) => ({ ...prev, ...data }));
+  };
+
+  const handleDeleteCourse = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Xóa khóa học',
+      description: `Bạn có chắc chắn muốn xóa khóa học "${course.name}"? Tất cả bài học và tài liệu sẽ bị xóa theo.`,
+      onConfirm: async () => {
+        await sdk.deleteCourse(course.id);
+        toast.success('Đã xóa khóa học');
+        router.push('/lecturer/dashboard');
+      },
+    });
+  };
+
+  const handleSubmitReview = async () => {
+    try {
+      await sdk.submitForReview(course.id);
+      toast.success('Đã gửi xét duyệt');
+      // Refresh course data
+      const res = await sdk.getCourseBySlugOrId(course.id);
+      const data = (res as any).data || res;
+      setCourse((prev) => ({ ...prev, ...data }));
+    } catch { /* interceptor */ }
+  };
+
+  // ── Lesson actions ───────────────────────────────────────────────────────
+
+  const handleSaveLesson = async (name: string, id?: string) => {
+    if (id) {
+      const res = await sdk.updateLesson(id, { name });
+      const data = (res as any).data || res;
+      setCourse((prev) => ({
+        ...prev,
+        lessons: prev.lessons.map((l) => (l.id === id ? { ...l, ...data } : l)),
+      }));
+      toast.success('Đã cập nhật bài học');
+    } else {
+      const res = await sdk.createLesson(course.id, { name });
+      const data = (res as any).data || res;
+      setCourse((prev) => ({
+        ...prev,
+        lessons: [...prev.lessons, { ...data, materials: [] }],
+      }));
+      toast.success('Đã thêm bài học');
     }
+  };
+
+  const handleDeleteLesson = (lesson: Lesson) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Xóa bài học',
+      description: `Bạn có chắc chắn muốn xóa bài học "${lesson.name}"?`,
+      onConfirm: async () => {
+        await sdk.deleteLesson(lesson.id);
+        setCourse((prev) => ({
+          ...prev,
+          lessons: prev.lessons.map((l) => l.id === lesson.id ? { ...l, status: 'outdated' } : l),
+        }));
+        toast.success('Đã xóa bài học');
+      },
+    });
+  };
+
+  // ── Material actions ─────────────────────────────────────────────────────
+
+  const handleSaveMaterial = async (data: { name: string; url: string; type?: string }, id?: string) => {
+    if (id) {
+      const res = await sdk.updateMaterial(id, data);
+      const updated = (res as any).data || res;
+      // Refresh the whole course to handle the outdated + new record scenario
+      const courseRes = await sdk.getCourseBySlugOrId(course.id);
+      const courseData = (courseRes as any).data || courseRes;
+      setCourse((prev) => ({ ...prev, lessons: courseData.lessons ?? prev.lessons }));
+      toast.success('Đã cập nhật tài liệu');
+    } else if (materialDialog.lessonId) {
+      const res = await sdk.createMaterial(materialDialog.lessonId, data);
+      const created = (res as any).data || res;
+      setCourse((prev) => ({
+        ...prev,
+        lessons: prev.lessons.map((l) =>
+          l.id === materialDialog.lessonId
+            ? { ...l, materials: [...l.materials, created] }
+            : l
+        ),
+      }));
+      toast.success('Đã thêm tài liệu');
+    }
+  };
+
+  const handleRestoreLesson = (_lesson: Lesson) => {
+    toast.info('Chức năng khôi phục đang được phát triển');
+  };
+
+  const handleRestoreMaterial = (_material: Material) => {
+    toast.info('Chức năng khôi phục đang được phát triển');
+  };
+
+  const handleDeleteMaterial = (material: Material) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Xóa tài liệu',
+      description: `Bạn có chắc chắn muốn xóa tài liệu "${material.name}"?`,
+      onConfirm: async () => {
+        await sdk.deleteMaterial(material.id);
+        setCourse((prev) => ({
+          ...prev,
+          lessons: prev.lessons.map((l) => ({
+            ...l,
+            materials: l.materials.map((m) => m.id === material.id ? { ...m, status: 'outdated' } : m),
+          })),
+        }));
+        toast.success('Đã xóa tài liệu');
+      },
+    });
   };
 
   return (
@@ -246,36 +627,55 @@ export function CourseManagement({ course }: CourseManagementProps) {
             <h1 className="text-2xl font-bold">{course.name}</h1>
             <StatusBadge status={course.status} />
           </div>
-          {course.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
-          )}
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setEditCourseOpen(true)}>
             <Pencil className="h-4 w-4 mr-1.5" />
             Sửa
           </Button>
-          <Button size="sm">
+          <Button variant="destructive" size="sm" onClick={handleDeleteCourse}>
+            <Trash2 className="h-4 w-4 mr-1.5" />
+            Xóa
+          </Button>
+          <Button size="sm" onClick={handleSubmitReview}>
             <Send className="h-4 w-4 mr-1.5" />
             Gửi xét duyệt
           </Button>
         </div>
       </div>
 
-      {/* Thumbnail */}
-      {course.thumbnail && (
-        <div className="aspect-video w-full max-w-sm overflow-hidden rounded-lg border">
-          <img src={course.thumbnail} alt={course.name} className="h-full w-full object-cover" />
-        </div>
-      )}
+      <div className='flex gap-3'>
+        {/* Thumbnail */}
+        {course.thumbnail && (
+          <div className="aspect-video w-full max-w-sm overflow-hidden rounded-lg border">
+            <img src={course.thumbnail} alt={course.name} className="h-full w-full object-cover" />
+          </div>
+        )}
+
+        {/* Content */}
+        {course.content && (
+          <Card className='flex-1'>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Nội dung khóa học</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {course.content.split('|').filter(Boolean).map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Lessons */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Nội dung khóa học</CardTitle>
-            <Button size="sm" variant="outline">
-              + Thêm bài học
+            <CardTitle className="text-base">Bài học</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setLessonDialog({ open: true })}>
+              <Plus className="mr-1 h-4 w-4" /> Thêm bài học
             </Button>
           </div>
         </CardHeader>
@@ -287,6 +687,13 @@ export function CourseManagement({ course }: CourseManagementProps) {
                 lesson={lesson}
                 defaultOpen={idx === 0}
                 onView={handleView}
+                onEditLesson={(l) => setLessonDialog({ open: true, lesson: l })}
+                onDeleteLesson={handleDeleteLesson}
+                onRestoreLesson={handleRestoreLesson}
+                onAddMaterial={(lessonId) => setMaterialDialog({ open: true, lessonId })}
+                onEditMaterial={(m) => setMaterialDialog({ open: true, material: m })}
+                onDeleteMaterial={handleDeleteMaterial}
+                onRestoreMaterial={handleRestoreMaterial}
               />
             ))
           ) : (
@@ -295,7 +702,21 @@ export function CourseManagement({ course }: CourseManagementProps) {
         </CardContent>
       </Card>
 
-      {/* Media dialog */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Mô tả</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="[&_*]:revert"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(course.description || ''),
+            }}
+          />
+        </CardContent>
+      </Card>
+      <div id="toolbar-container"></div>
+      {/* ── Dialogs ────────────────────────────────────────────────────── */}
       <MediaModal
         open={media.open}
         onOpenChange={(open) => setMedia((prev) => ({ ...prev, open }))}
@@ -303,6 +724,48 @@ export function CourseManagement({ course }: CourseManagementProps) {
         url={media.url}
         encryptUrl={appStore.encryptUrl}
         title={media.title}
+      />
+
+      {editCourseOpen && (
+        <EditCourseDialog
+          open={editCourseOpen}
+          onClose={() => setEditCourseOpen(false)}
+          course={course}
+          onSaved={handleCourseSaved}
+        />
+      )}
+
+      {lessonDialog.open && (
+        <LessonDialog
+          key={lessonDialog.lesson?.id ?? 'new-lesson'}
+          open={lessonDialog.open}
+          onClose={() => setLessonDialog({ open: false })}
+          initial={lessonDialog.lesson ? { id: lessonDialog.lesson.id, name: lessonDialog.lesson.name } : undefined}
+          onSave={handleSaveLesson}
+        />
+      )}
+
+      {materialDialog.open && (
+        <MaterialDialog
+          key={materialDialog.material?.id ?? 'new-material'}
+          open={materialDialog.open}
+          onClose={() => setMaterialDialog({ open: false })}
+          initial={materialDialog.material ? {
+            id: materialDialog.material.id,
+            name: materialDialog.material.name,
+            url: materialDialog.material.url,
+            type: materialDialog.material.type,
+          } : undefined}
+          onSave={handleSaveMaterial}
+        />
+      )}
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
       />
     </div>
   );
