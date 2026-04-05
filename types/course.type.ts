@@ -108,4 +108,26 @@ export interface CourseDetailResponse {
 }
 
 export type Course = CourseListItem | CourseDetailResponse
+
+// ─── Approval System ────────────────────────────────────────────────────────
+
+export type CourseStatus = 'draft' | 'pending' | 'published' | 'update' | 'rejected' | 'need_update'
+
+export type LessonStatus = 'draft' | 'published' | 'outdated' | 'deleted'
+
+export type MaterialStatus = 'draft' | 'published' | 'outdated' | 'deleted'
+
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
+
+export interface CourseApproval {
+  id: string
+  courseId: string
+  teacherId: string
+  description: string
+  status: ApprovalStatus
+  reason?: string | null
+  adminId?: string | null
+  createdAt: string
+  updatedAt: string
+}
 ``

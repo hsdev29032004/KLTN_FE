@@ -2,7 +2,7 @@ export interface ILessonSchema {
     id: string;
     courseId: string;
     name: string;
-    status: 'draft' | 'pending' | 'published';
+    status: 'draft' | 'published' | 'outdated' | 'deleted';
     publisherId?: string;
     isDeleted: boolean;
     createdAt: string;

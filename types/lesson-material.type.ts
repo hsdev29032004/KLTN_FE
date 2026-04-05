@@ -4,7 +4,7 @@ export interface LessonMaterial {
     type: 'video' | 'pdf' | 'img' | 'link' | 'other';
     name: string;
     url: string;
-    status: 'draft' | 'pending' | 'published';
+    status: 'draft' | 'published' | 'outdated' | 'deleted';
     publisherId?: string;
     isDeleted: boolean;
     createdAt: string;

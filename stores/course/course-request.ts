@@ -1,4 +1,4 @@
-import { CourseDetailResponse, CourseListItem, Lesson, Material } from '@/types/course.type';
+import { CourseDetailResponse, CourseListItem, CourseApproval, Lesson, Material } from '@/types/course.type';
 import { Base } from '../base';
 
 export class CourseRequest extends Base {
@@ -69,9 +69,37 @@ export class CourseRequest extends Base {
     });
   }
 
-  async submitForReview(courseId: string): Promise<any> {
+  async submitForReview(courseId: string, data: { description: string }): Promise<any> {
     return this.request(`/api/course/${courseId}/submit-review`, {
       method: 'POST',
+      data,
+    });
+  }
+
+  // ── Admin Actions ────────────────────────────────────────────────────────
+
+  async publishCourse(courseId: string): Promise<any> {
+    return this.request(`/api/course/${courseId}/publish`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectCourse(courseId: string, data: { reason: string }): Promise<any> {
+    return this.request(`/api/course/${courseId}/reject`, {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async getCourseApprovals(courseId: string): Promise<{ data: CourseApproval[] }> {
+    return this.request(`/api/course/${courseId}/approvals`, {
+      method: 'GET',
+    });
+  }
+
+  async getAllCoursesAdmin(): Promise<{ data: CourseListItem[] }> {
+    return this.request('/api/course/admin/all', {
+      method: 'GET',
     });
   }
 

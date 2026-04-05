@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Eye,
   Pencil,
@@ -10,6 +10,8 @@ import {
   X,
   Save,
   RotateCcw,
+  History,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +50,8 @@ import { useAppStore } from '@/stores/app/app-store';
 import SDK from '@/stores/sdk';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import type { CourseApproval } from '@/types/course.type';
+import { Textarea } from '@/components/ui/textarea';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,6 +82,7 @@ interface CourseData {
   description?: string | null;
   price: number;
   lessons: Lesson[];
+  approvals?: CourseApproval[];
 }
 
 interface CourseManagementProps {
@@ -104,8 +109,20 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
     className: 'bg-gray-100 text-gray-600 border-gray-300',
   },
   update: {
-    label: 'Chờ cập nhật',
+    label: 'Chờ duyệt cập nhật',
     className: 'bg-blue-100 text-blue-700 border-blue-300',
+  },
+  rejected: {
+    label: 'Bị từ chối',
+    className: 'bg-red-100 text-red-700 border-red-300',
+  },
+  need_update: {
+    label: 'Cần cập nhật',
+    className: 'bg-purple-100 text-purple-700 border-purple-300',
+  },
+  deleted: {
+    label: 'Đã xóa',
+    className: 'bg-red-100 text-red-500 border-red-300',
   },
 };
 
@@ -941,14 +958,33 @@ export function CourseManagement({
     });
   };
 
-  const handleSubmitReview = async () => {
+  // ── Submit Review Dialog ──────────────────────────────────────────────
+  const [submitReviewOpen, setSubmitReviewOpen] = useState(false);
+  const [approvals, setApprovals] = useState<CourseApproval[]>(initialCourse.approvals ?? []);
+
+  const canSubmitReview = ['draft', 'rejected', 'published', 'need_update'].includes(course.status);
+  const isWaitingApproval = ['pending', 'update'].includes(course.status);
+  const latestRejection = approvals.find((a) => a.status === 'rejected');
+
+  useEffect(() => {
+    sdk.getCourseApprovals(course.id)
+      .then((res: any) => {
+        const data = (res as any).data || res;
+        if (Array.isArray(data)) setApprovals(data);
+      })
+      .catch(() => {});
+  }, [course.id, course.status]);
+
+  const handleSubmitReview = async (description: string) => {
     try {
-      await sdk.submitForReview(course.id);
-      toast.success('Đã gửi xét duyệt');
-      // Refresh course data
+      await sdk.submitForReview(course.id, { description });
       const res = await sdk.getCourseBySlugOrId(course.id);
       const data = (res as any).data || res;
       setCourse((prev) => ({ ...prev, ...data }));
+      // Refresh approvals
+      const appRes = await sdk.getCourseApprovals(course.id);
+      const appData = (appRes as any).data || appRes;
+      if (Array.isArray(appData)) setApprovals(appData);
     } catch {
       /* interceptor */
     }
@@ -1076,14 +1112,42 @@ export function CourseManagement({
           </Button>
           <Button variant="destructive" size="sm" onClick={handleDeleteCourse}>
             <Trash2 className="h-4 w-4 mr-1.5" />
-            Xóa
+            Ngừng kinh doanh
           </Button>
-          <Button size="sm" onClick={handleSubmitReview}>
-            <Send className="h-4 w-4 mr-1.5" />
-            Gửi xét duyệt
-          </Button>
+          {canSubmitReview && (
+            <Button size="sm" onClick={() => setSubmitReviewOpen(true)}>
+              <Send className="h-4 w-4 mr-1.5" />
+              Gửi xét duyệt
+            </Button>
+          )}
+          {isWaitingApproval && (
+            <Button size="sm" variant="secondary" disabled>
+              <History className="h-4 w-4 mr-1.5" />
+              Đang chờ duyệt
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Rejection / Need Update Alert */}
+      {(course.status === 'rejected' || course.status === 'need_update') && latestRejection && (
+        <Card className="border-red-300 bg-red-50 dark:bg-red-950/20">
+          <CardContent className="flex items-start gap-3 pt-4">
+            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-700 dark:text-red-400">
+                {course.status === 'rejected' ? 'Khóa học bị từ chối' : 'Cập nhật bị từ chối'}
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                <span className="font-medium">Lý do:</span> {latestRejection.reason}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {new Date(latestRejection.updatedAt).toLocaleString('vi-VN')}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-3">
         {/* Thumbnail */}
@@ -1173,6 +1237,43 @@ export function CourseManagement({
           />
         </CardContent>
       </Card>
+      {/* Approval History */}
+      {approvals.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Lịch sử phê duyệt
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {approvals.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-start gap-3 rounded-lg border p-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <StatusBadge status={a.status === 'approved' ? 'published' : a.status === 'rejected' ? 'rejected' : 'pending'} />
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(a.createdAt).toLocaleString('vi-VN')}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-1">{a.description}</p>
+                    {a.reason && (
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                        <span className="font-medium">Lý do từ chối:</span> {a.reason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div id="toolbar-container"></div>
       {/* ── Dialogs ────────────────────────────────────────────────────── */}
       <MediaModal
@@ -1233,6 +1334,80 @@ export function CourseManagement({
         title={confirmDialog.title}
         description={confirmDialog.description}
       />
+
+      {submitReviewOpen && (
+        <SubmitReviewDialog
+          open={submitReviewOpen}
+          onClose={() => setSubmitReviewOpen(false)}
+          onSubmit={handleSubmitReview}
+          courseStatus={course.status}
+        />
+      )}
     </div>
+  );
+}
+
+// ─── Submit Review Dialog ─────────────────────────────────────────────────────
+
+function SubmitReviewDialog({
+  open,
+  onClose,
+  onSubmit,
+  courseStatus,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (description: string) => Promise<void>;
+  courseStatus: string;
+}) {
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const isResend = courseStatus === 'rejected' || courseStatus === 'need_update';
+
+  const handleSubmit = async () => {
+    if (!description.trim()) {
+      toast.error('Vui lòng nhập mô tả thay đổi');
+      return;
+    }
+    setLoading(true);
+    try {
+      await onSubmit(description.trim());
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {isResend ? 'Gửi lại xét duyệt' : 'Gửi xét duyệt khóa học'}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label>Mô tả thay đổi</Label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Mô tả chi tiết các thay đổi để admin xem xét..."
+              rows={4}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Hủy
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            <Send className="mr-1 h-4 w-4" />
+            {loading ? 'Đang gửi...' : 'Gửi xét duyệt'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

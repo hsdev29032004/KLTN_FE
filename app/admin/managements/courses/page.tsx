@@ -1,7 +1,7 @@
+'use client';
+
+import { AdminCourseManagement } from '@/components/admin/course-management';
+
 export default function Courses() {
-  return (
-    <div>
-      Admin Manage Courses Page
-    </div>
-  );
+  return <AdminCourseManagement />;
 }
