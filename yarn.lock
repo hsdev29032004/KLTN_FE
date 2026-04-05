@@ -2454,6 +2454,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@socket.io/component-emitter@npm:~3.1.0":
+  version: 3.1.2
+  resolution: "@socket.io/component-emitter@npm:3.1.2"
+  checksum: 10/89888f00699eb34e3070624eb7b8161fa29f064aeb1389a48f02195d55dd7c52a504e52160016859f6d6dffddd54324623cdd47fd34b3d46f9ed96c18c456edc
+  languageName: node
+  linkType: hard
+
 "@standard-schema/spec@npm:^1.0.0":
   version: 1.1.0
   resolution: "@standard-schema/spec@npm:1.1.0"
@@ -3789,7 +3796,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:^4.1.0, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.4.0":
+"debug@npm:4, debug@npm:^4.1.0, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.4.0, debug@npm:~4.4.1":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
   dependencies:
@@ -3929,6 +3936,26 @@ __metadata:
   dependencies:
     iconv-lite: "npm:^0.6.2"
   checksum: 10/bb98632f8ffa823996e508ce6a58ffcf5856330fde839ae42c9e1f436cc3b5cc651d4aeae72222916545428e54fd0f6aa8862fd8d25bdbcc4589f1e3f3715e7f
+  languageName: node
+  linkType: hard
+
+"engine.io-client@npm:~6.6.1":
+  version: 6.6.4
+  resolution: "engine.io-client@npm:6.6.4"
+  dependencies:
+    "@socket.io/component-emitter": "npm:~3.1.0"
+    debug: "npm:~4.4.1"
+    engine.io-parser: "npm:~5.2.1"
+    ws: "npm:~8.18.3"
+    xmlhttprequest-ssl: "npm:~2.1.1"
+  checksum: 10/1e45a6f5453d7112173ab593c791f1d17f7fba73774309adc9049428ab8318f71b5dd9b362aa5a05a11d1de338d46ef7b9777602357aa14894abdc100a50802d
+  languageName: node
+  linkType: hard
+
+"engine.io-parser@npm:~5.2.1":
+  version: 5.2.3
+  resolution: "engine.io-parser@npm:5.2.3"
+  checksum: 10/eb0023fff5766e7ae9d59e52d92df53fea06d472cfd7b52e5d2c36b4c1dbf78cab5fde1052bcb3d4bb85bdb5aee10ae85d8a1c6c04676dac0c6cdf16bcba6380
   languageName: node
   linkType: hard
 
@@ -5356,6 +5383,7 @@ __metadata:
     react-redux: "npm:^9.2.0"
     recharts: "npm:2.15.4"
     sass: "npm:^1.97.3"
+    socket.io-client: "npm:^4.8.3"
     sonner: "npm:^2.0.7"
     tailwind-merge: "npm:^3.4.0"
     tailwindcss: "npm:^4"
@@ -6874,6 +6902,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"socket.io-client@npm:^4.8.3":
+  version: 4.8.3
+  resolution: "socket.io-client@npm:4.8.3"
+  dependencies:
+    "@socket.io/component-emitter": "npm:~3.1.0"
+    debug: "npm:~4.4.1"
+    engine.io-client: "npm:~6.6.1"
+    socket.io-parser: "npm:~4.2.4"
+  checksum: 10/ee83c08cb3a6f6c450e484b03036a0d853ceb62825f8f1093146298b63eccf86c7fdd1958d68940f8b7a8766b80bb4b30c7815b2811733edda74b21ff002e1d4
+  languageName: node
+  linkType: hard
+
+"socket.io-parser@npm:~4.2.4":
+  version: 4.2.6
+  resolution: "socket.io-parser@npm:4.2.6"
+  dependencies:
+    "@socket.io/component-emitter": "npm:~3.1.0"
+    debug: "npm:~4.4.1"
+  checksum: 10/cf8f3e9feee42b2405065bccef732894a0b07b7cb734c4954eb8876d7a0038e7df6e6d06fab3a25f816f5d996917391833d5f06136e8c8c6fbecf5da962c1c9e
+  languageName: node
+  linkType: hard
+
 "socks-proxy-agent@npm:^8.0.3":
   version: 8.0.5
   resolution: "socks-proxy-agent@npm:8.0.5"
@@ -7570,6 +7620,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ws@npm:~8.18.3":
+  version: 8.18.3
+  resolution: "ws@npm:8.18.3"
+  peerDependencies:
+    bufferutil: ^4.0.1
+    utf-8-validate: ">=5.0.2"
+  peerDependenciesMeta:
+    bufferutil:
+      optional: true
+    utf-8-validate:
+      optional: true
+  checksum: 10/725964438d752f0ab0de582cd48d6eeada58d1511c3f613485b5598a83680bedac6187c765b0fe082e2d8cc4341fc57707c813ae780feee82d0c5efe6a4c61b6
+  languageName: node
+  linkType: hard
+
 "xlsx@npm:^0.18.5":
   version: 0.18.5
   resolution: "xlsx@npm:0.18.5"
@@ -7584,6 +7649,13 @@ __metadata:
   bin:
     xlsx: bin/xlsx.njs
   checksum: 10/402df8d1e2678d57ad942332d78049c629695145478c7519800f1d6017c1ddd001417586d9c9cca7d55a43af68e47b77f6eca0399a77093b6ea1f131352f92cb
+  languageName: node
+  linkType: hard
+
+"xmlhttprequest-ssl@npm:~2.1.1":
+  version: 2.1.2
+  resolution: "xmlhttprequest-ssl@npm:2.1.2"
+  checksum: 10/708a177fe41c6c8cd4ec7c04d965b4c01801d87f44383ec639be58bdc14418142969841659e0850db44feee8bec0a3d3e7d33fed22519415f3d0daab04d3f160
   languageName: node
   linkType: hard
 

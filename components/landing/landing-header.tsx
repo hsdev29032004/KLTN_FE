@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, ShoppingCart, Bell, Wallet, Moon, Sun } from 'lucide-react';
+import { Search, ShoppingCart, Bell, Wallet, Moon, Sun, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +20,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
 import { useBankStore } from '@/stores/bank/bank-store';
 import { usePaymentStore } from '@/stores/payment/payment-store';
+import { useConversationStore } from '@/stores/conservation/conservation-store';
+import { useChatSocket } from '@/hooks/use-chat-socket';
 import { BankSelectionDialog } from '../payment/bank-selection-dialog';
 import { formatMoney } from '@/helpers/format.helper';
 
@@ -31,12 +33,20 @@ export function LandingHeader() {
 
   const { list: banks, loading: banksLoading, fetchBanks } = useBankStore();
   const { loading: depositing, createPaymentUrl } = usePaymentStore();
+  const { list: conversations, fetchMyConversations } = useConversationStore();
+  useChatSocket();
 
   const user = authStore.user;
 
   useEffect(() => {
     fetchBanks();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchMyConversations();
+    }
+  }, [user]);
 
   const handleDeposit = async (amount: number) => {
     try {
@@ -128,6 +138,64 @@ export function LandingHeader() {
                   <span className="sr-only">Giỏ hàng</span>
                 </Link>
               </Button>
+
+              {/* Messages */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <MessageSquare className="h-5 w-5" />
+                    {conversations && conversations.length > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                        {conversations.length > 9 ? '9+' : conversations.length}
+                      </span>
+                    )}
+                    <span className="sr-only">Tin nhắn</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <DropdownMenuLabel>Tin nhắn</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {!conversations || conversations.length === 0 ? (
+                    <div className="py-4 text-center text-sm text-muted-foreground">
+                      Chưa có cuộc trò chuyện nào
+                    </div>
+                  ) : (
+                    <div className="max-h-80 overflow-y-auto">
+                      {conversations.slice(0, 10).map((conv) => (
+                        <DropdownMenuItem
+                          key={conv.id}
+                          className="flex items-start gap-3 p-3 cursor-pointer"
+                          onClick={() => router.push(`/chat/${conv.id}`)}
+                        >
+                          <Avatar className="h-9 w-9 shrink-0">
+                            <AvatarImage src={conv.course?.thumbnail} />
+                            <AvatarFallback>
+                              {conv.name?.charAt(0)?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium line-clamp-1">{conv.name}</p>
+                            {conv.lastMessage ? (
+                              <p className="text-xs text-muted-foreground line-clamp-1">
+                                {conv.lastMessage.sender.fullName}: {conv.lastMessage.content}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">Chưa có tin nhắn</p>
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="justify-center text-primary font-medium"
+                    onClick={() => router.push('/chat')}
+                  >
+                    Xem tất cả tin nhắn
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* User Profile */}
               <DropdownMenu>

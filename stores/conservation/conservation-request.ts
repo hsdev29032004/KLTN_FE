@@ -1,4 +1,10 @@
-import { Conversation, ConversationDetail } from '@/types/conversation.type';
+import {
+  Conversation,
+  ConversationDetail,
+  ConversationDetailResponse,
+  ConversationListResponse,
+  Message,
+} from '@/types/conversation.type';
 import { Base } from '../base';
 
 export class ConversationRequest extends Base {
@@ -6,19 +12,30 @@ export class ConversationRequest extends Base {
     super(accessToken, refreshToken);
   }
 
-  async getInstructorConversations(
-    instructorId: string,
-  ): Promise<{ data: Conversation[] }> {
-    return this.request(`/api/conversation/instructor/${instructorId}`, {
+  async getMyConversations(): Promise<ConversationListResponse> {
+    return this.request('/api/conversation/my', {
       method: 'GET',
     });
   }
 
   async getConversationDetails(
     conversationId: string,
-  ): Promise<{ data: ConversationDetail }> {
-    return this.request(`/api/conversation/${conversationId}`, {
-      method: 'GET',
+    page = 1,
+    limit = 50,
+  ): Promise<ConversationDetailResponse> {
+    return this.request(
+      `/api/conversation/${conversationId}?page=${page}&limit=${limit}`,
+      { method: 'GET' },
+    );
+  }
+
+  async sendMessage(
+    conversationId: string,
+    content: string,
+  ): Promise<{ message: string; data: Message }> {
+    return this.request(`/api/conversation/${conversationId}/messages`, {
+      method: 'POST',
+      data: { content },
     });
   }
 }

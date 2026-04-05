@@ -53,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     // Fetch conversations
     SDK.getInstance()
-      .getInstructorConversations(userId)
+      .getMyConversations()
       .then((res) => {
         setChatItems(
           res.data.map((conversation: any) => ({
