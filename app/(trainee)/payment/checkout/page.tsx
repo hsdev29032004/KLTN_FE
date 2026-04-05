@@ -99,7 +99,7 @@ export default function CheckoutPage() {
             {courses.map((c) => (
               <Card
                 key={c.id}
-                className={`overflow-hidden cursor-pointer transition-colors ${checkedIds.has(c.id) ? "border-primary" : "opacity-60"
+                className={`overflow-hidden py-0 cursor-pointer transition-colors ${checkedIds.has(c.id) ? "border-primary" : "opacity-60"
                   }`}
                 onClick={() => toggleCheck(c.id)}
               >

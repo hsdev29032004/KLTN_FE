@@ -7,6 +7,7 @@ import { StatRequest } from "./stat/stat-request";
 import { SystemRequest } from "./system/system-request";
 import { ConversationRequest } from "./conservation/conservation-request";
 import { InvoiceRequest } from "./invoice/invoice-request";
+import { PaymentRequest } from "./payment/payment-request";
 
 function applyMixins(derivedCtor: any, baseCtors: any[]) {
   baseCtors.forEach((baseCtor) => {
@@ -54,7 +55,8 @@ interface SDK
     StatRequest,
     SystemRequest,
     ConversationRequest,
-    InvoiceRequest {}
+    InvoiceRequest,
+    PaymentRequest {}
 applyMixins(SDK, [
   AuthRequest,
   CourseRequest,
@@ -64,6 +66,7 @@ applyMixins(SDK, [
   SystemRequest,
   ConversationRequest,
   InvoiceRequest,
+  PaymentRequest,
 ]);
 
 export default SDK;

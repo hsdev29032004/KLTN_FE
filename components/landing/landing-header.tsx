@@ -18,12 +18,9 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { useBankStore } from '@/stores/bank/bank-store';
-import { useQRGenerator } from '@/hooks/use-qr-generator';
-import { Bank } from '@/types/bank.type';
+import { usePaymentStore } from '@/stores/payment/payment-store';
 import { BankSelectionDialog } from '../payment/bank-selection-dialog';
-import { QRCodeDisplay } from '../payment/qr-code-display';
 import { formatMoney } from '@/helpers/format.helper';
 
 export function LandingHeader() {
@@ -31,25 +28,26 @@ export function LandingHeader() {
   const router = useRouter();
   const authStore = useAuthStore();
   const [showBankDialog, setShowBankDialog] = useState(false);
-  const [showQRDialog, setShowQRDialog] = useState(false);
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
 
-  const { list: banks, loading, fetchBanks } = useBankStore();
-  const { generateQR } = useQRGenerator();
+  const { list: banks, loading: banksLoading, fetchBanks } = useBankStore();
+  const { loading: depositing, createPaymentUrl } = usePaymentStore();
 
   const user = authStore.user;
-
-  const paymentMessage = user?.id ? `ONLEARN_${user.id}` : 'ONLEARN';
-  const qrData = selectedBank ? generateQR(selectedBank, paymentMessage) : null;
 
   useEffect(() => {
     fetchBanks();
   }, []);
 
-  const handleSelectBank = (bank: Bank) => {
-    setSelectedBank(bank);
-    setShowBankDialog(false);
-    setShowQRDialog(true);
+  const handleDeposit = async (amount: number) => {
+    try {
+      const result = await createPaymentUrl(amount);
+      const paymentUrl = (result as { url: string; transactionId: string })?.url;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+      }
+    } catch (error) {
+      console.error('Deposit failed:', error);
+    }
   };
 
   const toggleTheme = () => {
@@ -195,38 +193,11 @@ export function LandingHeader() {
       <BankSelectionDialog
         open={showBankDialog}
         onOpenChange={setShowBankDialog}
-        onSelectBank={handleSelectBank}
+        onDeposit={handleDeposit}
         banks={banks || []}
-        selectedBankId={selectedBank?.id}
-        loading={loading}
+        loading={banksLoading}
+        depositing={depositing}
       />
-
-      {/* QR Code Dialog */}
-      <Dialog
-        open={showQRDialog}
-        onOpenChange={(open) => {
-          setShowQRDialog(open);
-          if (!open) setSelectedBank(null);
-        }}
-      >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedBank && qrData && (
-            <div>
-              <QRCodeDisplay
-                qrUrl={qrData.qrUrl}
-                displayUrl={qrData.displayUrl}
-                bankName={selectedBank.bankName}
-                bankNumber={selectedBank.bankNumber}
-                recipient={selectedBank.recipient}
-                phone=""
-                amount=""
-                message={paymentMessage}
-                type="deposit"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </header>
   );
 }

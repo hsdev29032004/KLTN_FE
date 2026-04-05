@@ -58,3 +58,54 @@ export interface InvoiceDetailResponse {
   data: InvoiceDetail[];
   meta: InvoiceDetailMeta;
 }
+
+// --- User-facing invoice types (GET /invoice/my) ---
+
+export interface MyInvoiceCourse {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnail: string;
+  user?: {
+    id: string;
+    fullName: string;
+    avatar: string;
+  };
+}
+
+export interface MyInvoiceDetailItem {
+  id: string;
+  price: number;
+  commissionRate: number;
+  status: string;
+  createdAt?: string;
+  courses: MyInvoiceCourse;
+}
+
+export interface MyInvoice {
+  id: string;
+  amount: number;
+  status: 'purchased' | 'refunded';
+  createdAt: string;
+  updatedAt: string;
+  detail_invoices: MyInvoiceDetailItem[];
+}
+
+export interface MyInvoiceListParams {
+  status?: 'purchased' | 'refunded';
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface MyInvoiceListResponse {
+  message: string;
+  data: MyInvoice[];
+  meta: InvoiceDetailMeta;
+}
+
+export interface MyInvoiceDetailResponse {
+  message: string;
+  data: MyInvoice;
+}

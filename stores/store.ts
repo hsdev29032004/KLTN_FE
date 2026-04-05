@@ -10,6 +10,7 @@ import statReducer from "./stat/stat-slice";
 import reviewReducer from "./review/review-slice";
 import systemReducer from "./system/system-slice";
 import invoiceReducer from "./invoice/invoice-slice";
+import paymentReducer from "./payment/payment-slice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
   review: reviewReducer,
   system: systemReducer,
   invoice: invoiceReducer,
+  payment: paymentReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
