@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Star, Users, BookOpen, Clock, Heart, ShoppingCart } from 'lucide-react';
+import { Star, Users, BookOpen, Clock, Heart, ShoppingCart, FileQuestion } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-import { Course, ICourseReview, Lesson } from '@/types/course.type';
+import { Course, ICourseReview, Lesson, CourseExam } from '@/types/course.type';
 import { usePurchaseStore } from '@/stores/purchase/purchase-store';
 import { useCourseStore } from '@/stores/course/course-store';
 import { useAppStore } from '@/stores/app/app-store';
@@ -101,6 +101,13 @@ export function CourseDetail({
   const contentItems = parseContentItems((course as any).content);
   const avgRating = calcAvgRating(reviews);
   const courseLessons: any[] = (course as any).lessons ?? [];
+  const courseExams: CourseExam[] = (course as any).exams ?? [];
+
+  // Merge lessons and exams by createdAt
+  const courseContent = [
+    ...courseLessons.map((l: any) => ({ ...l, _type: 'lesson' as const })),
+    ...courseExams.filter((e) => e.status === 'published').map((e) => ({ ...e, _type: 'exam' as const })),
+  ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   const handleBuy = async () => {
     await purchaseStore.addCourseSelected(course.id);
@@ -207,24 +214,41 @@ export function CourseDetail({
       <section className="py-12">
         <div className="mx-auto max-w-7xl space-y-16">
 
-          {/* Lessons */}
+          {/* Lessons & Exams */}
           <div>
             <h2 className="mb-6 text-3xl font-bold">Nội dung khóa học</h2>
-            {courseLessons.length > 0 ? (
+            {courseContent.length > 0 ? (
               <div className="space-y-3">
-                {courseLessons.map((lesson, idx) => (
-                  <LessonItem
-                    key={lesson.id}
-                    lesson={lesson}
-                    defaultOpen={idx === 0}
-                    onPreview={handlePreview}
-                  />
-                ))}
+                {courseContent.map((item, idx) =>
+                  item._type === 'lesson' ? (
+                    <LessonItem
+                      key={item.id}
+                      lesson={item}
+                      defaultOpen={idx === 0}
+                      onPreview={handlePreview}
+                    />
+                  ) : (
+                    <Card key={item.id} className="overflow-hidden">
+                      <div className="flex items-center gap-3 p-4">
+                        <FileQuestion className="h-5 w-5 text-blue-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold">{item.name}</h3>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            <span>{item.questionCount} câu hỏi</span>
+                            <span>{item.duration} phút</span>
+                            <span>Đạt: {item.passPercent}%</span>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">Đề thi</Badge>
+                      </div>
+                    </Card>
+                  )
+                )}
               </div>
             ) : (
               <Card>
                 <CardContent className="p-4 text-center text-muted-foreground">
-                  Chưa có bài học
+                  Chưa có nội dung
                 </CardContent>
               </Card>
             )}

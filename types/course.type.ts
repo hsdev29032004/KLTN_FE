@@ -40,6 +40,18 @@ export interface Lesson {
   materials: Material[]
 }
 
+export interface CourseExam {
+  id: string
+  name: string
+  passPercent: number
+  retryAfterDays: number
+  questionCount: number
+  duration: number
+  status: string
+  createdAt: string
+  _count?: { questions: number }
+}
+
 export interface CourseListItem {
   id: string
   name: string
@@ -93,6 +105,7 @@ export interface CourseDetailResponse {
   publisher?: UserSummary | null
   courseTopics: CourseTopic[]
   lessons: Lesson[]
+  exams?: CourseExam[]
   reviews: ICourseReview[]
   _count: CourseCount
 }

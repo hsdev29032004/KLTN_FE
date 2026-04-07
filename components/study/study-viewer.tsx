@@ -1,20 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { CourseDetailResponse, Lesson, Material } from "@/types/course.type";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { CourseDetailResponse, CourseExam, Lesson, Material } from "@/types/course.type";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useCourseStore } from "@/stores/course/course-store";
 import { useAppStore } from "@/stores/app/app-store";
 import { HlsVideoPlayer } from "@/components/common/hls-video-player";
+import SDK from "@/stores/sdk";
+import { toast } from "sonner";
+import { Lock, FileQuestion, CheckCircle2 } from "lucide-react";
+import type { ExamInfo } from "@/types/exam.type";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ResolvedMedia {
   material: Material;
   lesson: Lesson;
-  url: string;        // url thực sau khi fetch (không phải UUID)
+  url: string;
   encryptUrl: string;
 }
+
+type ContentItem =
+  | (Lesson & { _type: "lesson" })
+  | (CourseExam & { _type: "exam" });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +49,7 @@ function MediaViewer({ media }: { media: ResolvedMedia | null }) {
   if (media.material.type === "video") {
     return (
       <HlsVideoPlayer
-        key={`${process.env.NEXT_PUBLIC_CLOUD_URL}/api/videos/${media.url}/index.m3u8`}   // key thay đổi → remount → HLS reinit với url mới
+        key={`${process.env.NEXT_PUBLIC_CLOUD_URL}/api/videos/${media.url}/index.m3u8`}
         url={`${process.env.NEXT_PUBLIC_CLOUD_URL}/api/videos/${media.url}/index.m3u8`}
         className="max-h-[60vh] w-full bg-black"
       />
@@ -63,50 +73,109 @@ function MediaViewer({ media }: { media: ResolvedMedia | null }) {
   );
 }
 
-interface LessonListProps {
-  lessons: Lesson[];
+// ─── Content List (Lessons + Exams) ───────────────────────────────────────────
+
+interface ContentListProps {
+  content: ContentItem[];
+  examInfoMap: Record<string, ExamInfo>;
+  lockedLessonIds: Set<string>;
   selectedMaterialId: string | null;
   loading: boolean;
-  onSelect: (lesson: Lesson, material: Material) => void;
+  onSelectMaterial: (lesson: Lesson, material: Material) => void;
+  onGoToExam: (examId: string) => void;
 }
 
-function LessonList({ lessons, selectedMaterialId, loading, onSelect }: LessonListProps) {
+function ContentList({
+  content,
+  examInfoMap,
+  lockedLessonIds,
+  selectedMaterialId,
+  loading,
+  onSelectMaterial,
+  onGoToExam,
+}: ContentListProps) {
   return (
     <div className="space-y-4">
-      {lessons.length === 0 && (
-        <p className="text-sm text-muted-foreground">Chưa có bài học</p>
+      {content.length === 0 && (
+        <p className="text-sm text-muted-foreground">Chưa có nội dung</p>
       )}
-      {lessons.map((lesson) => (
-        <div key={lesson.id}>
-          <p className="mb-2 font-semibold">{lesson.name}</p>
-          <ul className="ml-2 space-y-1">
-            {lesson.materials && lesson.materials.length > 0 ? (
-              lesson.materials.map((material) => {
-                const isSelected = selectedMaterialId === material.id;
-                return (
-                  <li key={material.id}>
-                    <Button
-                      variant={isSelected ? "default" : "ghost"}
-                      size="sm"
-                      disabled={isSelected && loading}
-                      className="w-full justify-start text-left"
-                      onClick={() => onSelect(lesson, material)}
-                    >
-                      <span className="mr-2">{MATERIAL_ICON[material.type] ?? "📎"}</span>
-                      <span className="flex-1 truncate">{material.name}</span>
-                      {isSelected && loading && (
-                        <span className="ml-2 text-xs opacity-60">Đang tải...</span>
-                      )}
-                    </Button>
-                  </li>
-                );
-              })
+      {content.map((item) => {
+        if (item._type === "exam") {
+          const info = examInfoMap[item.id];
+          const passed = info?.hasPassed ?? false;
+          return (
+            <div key={item.id} className="rounded-lg border p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <FileQuestion className="h-4 w-4 text-blue-500" />
+                <span className="font-semibold text-sm flex-1">{item.name}</span>
+                {passed ? (
+                  <Badge variant="default" className="text-xs bg-green-100 text-green-700 border-green-300">
+                    <CheckCircle2 className="mr-1 h-3 w-3" /> Đã đạt
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Đề thi</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>{item.questionCount} câu</span>
+                <span>{item.duration} phút</span>
+                <span>Đạt: {item.passPercent}%</span>
+              </div>
+              <Button
+                size="sm"
+                variant={passed ? "outline" : "default"}
+                className="w-full"
+                onClick={() => onGoToExam(item.id)}
+              >
+                {passed ? "Xem lại" : "Làm bài thi"}
+              </Button>
+            </div>
+          );
+        }
+
+        // Lesson
+        const isLocked = lockedLessonIds.has(item.id);
+        return (
+          <div key={item.id} className={isLocked ? "opacity-60" : ""}>
+            <div className="flex items-center gap-2 mb-2">
+              {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+              <p className="font-semibold text-sm">{item.name}</p>
+            </div>
+            {isLocked ? (
+              <p className="text-xs text-muted-foreground ml-5">
+                🔒 Hoàn thành đề thi trước để mở khóa
+              </p>
             ) : (
-              <li className="text-sm text-muted-foreground">Chưa có tài liệu</li>
+              <ul className="ml-2 space-y-1">
+                {item.materials && item.materials.length > 0 ? (
+                  item.materials.map((material) => {
+                    const isSelected = selectedMaterialId === material.id;
+                    return (
+                      <li key={material.id}>
+                        <Button
+                          variant={isSelected ? "default" : "ghost"}
+                          size="sm"
+                          disabled={(isSelected && loading) || isLocked}
+                          className="w-full justify-start text-left"
+                          onClick={() => onSelectMaterial(item, material)}
+                        >
+                          <span className="mr-2">{MATERIAL_ICON[material.type] ?? "📎"}</span>
+                          <span className="flex-1 truncate">{material.name}</span>
+                          {isSelected && loading && (
+                            <span className="ml-2 text-xs opacity-60">Đang tải...</span>
+                          )}
+                        </Button>
+                      </li>
+                    );
+                  })
+                ) : (
+                  <li className="text-sm text-muted-foreground">Chưa có tài liệu</li>
+                )}
+              </ul>
             )}
-          </ul>
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -114,16 +183,61 @@ function LessonList({ lessons, selectedMaterialId, loading, onSelect }: LessonLi
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function StudyViewer({ courseDetail }: { courseDetail: CourseDetailResponse }) {
-  const { lessons = [] } = courseDetail;
+  const { lessons = [], exams = [] } = courseDetail;
   const courseStore = useCourseStore();
   const appStore = useAppStore();
+  const router = useRouter();
 
   const [media, setMedia] = useState<ResolvedMedia | null>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [examInfoMap, setExamInfoMap] = useState<Record<string, ExamInfo>>({});
+
+  // Merge lessons + exams sorted by createdAt
+  const courseContent = useMemo<ContentItem[]>(() => {
+    return [
+      ...lessons.map((l) => ({ ...l, _type: "lesson" as const })),
+      ...(exams || []).filter((e) => e.status === "published").map((e) => ({ ...e, _type: "exam" as const })),
+    ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [lessons, exams]);
+
+  // Load exam info for each published exam
+  useEffect(() => {
+    if (!exams || exams.length === 0) return;
+    const sdk = SDK.getInstance();
+    const published = exams.filter((e) => e.status === "published");
+    Promise.all(
+      published.map((e) =>
+        sdk.getExamInfo(e.id).then((res) => ({ id: e.id, info: res.data })).catch(() => null)
+      )
+    ).then((results) => {
+      const map: Record<string, ExamInfo> = {};
+      results.forEach((r) => { if (r) map[r.id] = r.info; });
+      setExamInfoMap(map);
+    });
+  }, [exams]);
+
+  // Compute locked lessons (lessons after an unpassed exam)
+  const lockedLessonIds = useMemo(() => {
+    const locked = new Set<string>();
+    let blocked = false;
+    for (const item of courseContent) {
+      if (item._type === "exam") {
+        const info = examInfoMap[item.id];
+        if (!info?.hasPassed) blocked = true;
+      } else if (blocked) {
+        locked.add(item.id);
+      }
+    }
+    return locked;
+  }, [courseContent, examInfoMap]);
 
   const handleSelect = async (lesson: Lesson, material: Material) => {
-    // PDF / Word → mở tab mới, không đổi viewer
+    if (lockedLessonIds.has(lesson.id)) {
+      toast.error("Bạn cần hoàn thành đề thi trước khi xem nội dung này");
+      return;
+    }
+
     if (material.type === "pdf" || material.type === "word") {
       window.open(material.url, "_blank");
       return;
@@ -133,7 +247,6 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
     setLoading(true);
 
     try {
-      // Fetch url thực — giống CourseDetail.handlePreview
       const res: any = await courseStore.fetchMaterialUrl(material.id);
       const payload = res?.payload ?? res;
       const url = payload?.url ?? payload;
@@ -141,11 +254,21 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
 
       appStore.setEncryptUrl(token);
       setMedia({ material, lesson, url, encryptUrl: token });
-    } catch (e) {
-      console.error("fetch material url error:", e);
+    } catch (e: any) {
+      // Handle 403 exam gate
+      if (e?.response?.status === 403) {
+        toast.error("Bạn cần hoàn thành đề thi trước khi xem tài liệu này");
+      } else {
+        console.error("fetch material url error:", e);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoToExam = (examId: string) => {
+    const slug = (courseDetail as any).slug ?? courseDetail.id;
+    router.push(`/study/exam/${examId}?course=${slug}`);
   };
 
   return (
@@ -159,14 +282,17 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
         )}
       </div>
 
-      {/* Right: lesson list */}
+      {/* Right: content list */}
       <div className="max-h-[70vh] w-full overflow-y-auto rounded-lg bg-background p-4 shadow md:w-[350px]">
-        <h2 className="mb-4 text-xl font-bold">Danh sách bài học</h2>
-        <LessonList
-          lessons={lessons}
+        <h2 className="mb-4 text-xl font-bold">Nội dung khóa học</h2>
+        <ContentList
+          content={courseContent}
+          examInfoMap={examInfoMap}
+          lockedLessonIds={lockedLessonIds}
           selectedMaterialId={selectedMaterialId}
           loading={loading}
-          onSelect={handleSelect}
+          onSelectMaterial={handleSelect}
+          onGoToExam={handleGoToExam}
         />
       </div>
     </div>

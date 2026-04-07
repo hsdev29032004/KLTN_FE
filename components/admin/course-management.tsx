@@ -86,6 +86,18 @@ interface CourseItem {
   };
 }
 
+interface ExamItem {
+  id: string;
+  name: string;
+  passPercent: number;
+  retryAfterDays: number;
+  questionCount: number;
+  duration: number;
+  status: string;
+  createdAt: string;
+  _count?: { questions: number };
+}
+
 interface CourseDetail {
   id: string;
   name: string;
@@ -95,6 +107,7 @@ interface CourseDetail {
   description?: string | null;
   price: number;
   lessons: Lesson[];
+  exams?: ExamItem[];
   user: {
     id: string;
     fullName: string;
@@ -445,6 +458,37 @@ function CourseDetailDialog({
                 )}
               </CardContent>
             </Card>
+
+            {/* Exams */}
+            {course.exams && course.exams.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">
+                    Đề thi ({course.exams.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {course.exams.map((exam) => (
+                    <div
+                      key={exam.id}
+                      className="flex items-center justify-between p-2 rounded-md border"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm">📝</span>
+                        <span className="text-sm font-medium truncate">{exam.name}</span>
+                        <StatusBadge status={exam.status} />
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+                        <span>{exam.questionCount} câu</span>
+                        <span>{exam.duration} phút</span>
+                        <span>{exam.passPercent}% đạt</span>
+                        {exam._count && <span>{exam._count.questions} trong ngân hàng</span>}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Approval History */}
             {approvals.length > 0 && (

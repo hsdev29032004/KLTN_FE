@@ -52,6 +52,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import type { CourseApproval } from '@/types/course.type';
 import { Textarea } from '@/components/ui/textarea';
+import { ExamSection } from '@/components/lecturer/exam-management';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ interface CourseData {
   description?: string | null;
   price: number;
   lessons: Lesson[];
+  exams?: any[];
   approvals?: CourseApproval[];
 }
 
@@ -1223,6 +1225,9 @@ export function CourseManagement({
           )}
         </CardContent>
       </Card>
+
+      {/* Exams */}
+      <ExamSection courseId={course.id} initialExams={course.exams ?? []} />
 
       <Card>
         <CardHeader className="pb-3">
