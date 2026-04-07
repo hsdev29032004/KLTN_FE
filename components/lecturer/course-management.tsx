@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import {
   Eye,
   Pencil,
@@ -52,7 +52,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import type { CourseApproval } from '@/types/course.type';
 import { Textarea } from '@/components/ui/textarea';
-import { ExamSection } from '@/components/lecturer/exam-management';
+import { ExamDetailPanel, ExamDialog } from '@/components/lecturer/exam-management';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -885,6 +885,8 @@ export function CourseManagement({
   const sdk = SDK.getInstance();
 
   const [course, setCourse] = useState<CourseData>(initialCourse);
+  const [exams, setExams] = useState<any[]>(initialCourse.exams ?? []);
+  const [createExamOpen, setCreateExamOpen] = useState(false);
   const [media, setMedia] = useState<MediaState>({
     open: false,
     type: '',
@@ -914,6 +916,28 @@ export function CourseManagement({
     description: '',
     onConfirm: async () => {},
   });
+
+  // ── Exam state & merged content ─────────────────────────────────────────
+
+  const mergedContent = useMemo(() => [
+    ...course.lessons.map((l) => ({ ...l, _type: 'lesson' as const })),
+    ...exams.map((e) => ({ ...e, _type: 'exam' as const })),
+  ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+  [course.lessons, exams]);
+
+  const handleExamUpdated = (updated: any) => {
+    setExams((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
+  };
+
+  const handleExamDeleted = (examId: string) => {
+    setExams((prev) => prev.map((e) => (e.id === examId ? { ...e, status: 'outdated' } : e)));
+  };
+
+  const handleCreateExam = async (data: any) => {
+    const res = await sdk.createExam(course.id, data);
+    setExams((prev) => [...prev, (res as any).data]);
+    toast.success('Đã tạo đề thi');
+  };
 
   // ── View Material ────────────────────────────────────────────────────────
 
@@ -1183,51 +1207,66 @@ export function CourseManagement({
         )}
       </div>
 
-      {/* Lessons */}
+      {/* Nội dung khóa học (lessons + exams sorted by createdAt) */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Bài học</CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setLessonDialog({ open: true })}
-            >
-              <Plus className="mr-1 h-4 w-4" /> Thêm bài học
-            </Button>
+            <CardTitle className="text-base">Nội dung khóa học</CardTitle>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setLessonDialog({ open: true })}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Thêm bài học
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCreateExamOpen(true)}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Thêm đề thi
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {course.lessons.length > 0 ? (
-            course.lessons.map((lesson, idx) => (
-              <LessonItem
-                key={lesson.id}
-                lesson={lesson}
-                defaultOpen={idx === 0}
-                onView={handleView}
-                onEditLesson={(l) => setLessonDialog({ open: true, lesson: l })}
-                onDeleteLesson={handleDeleteLesson}
-                onRestoreLesson={handleRestoreLesson}
-                onAddMaterial={(lessonId) =>
-                  setMaterialDialog({ open: true, lessonId })
-                }
-                onEditMaterial={(m) =>
-                  setMaterialDialog({ open: true, material: m })
-                }
-                onDeleteMaterial={handleDeleteMaterial}
-                onRestoreMaterial={handleRestoreMaterial}
-              />
-            ))
+          {mergedContent.length > 0 ? (
+            mergedContent.map((item, idx) =>
+              item._type === 'lesson' ? (
+                <LessonItem
+                  key={item.id}
+                  lesson={item}
+                  defaultOpen={idx === 0}
+                  onView={handleView}
+                  onEditLesson={(l) => setLessonDialog({ open: true, lesson: l })}
+                  onDeleteLesson={handleDeleteLesson}
+                  onRestoreLesson={handleRestoreLesson}
+                  onAddMaterial={(lessonId) =>
+                    setMaterialDialog({ open: true, lessonId })
+                  }
+                  onEditMaterial={(m) =>
+                    setMaterialDialog({ open: true, material: m })
+                  }
+                  onDeleteMaterial={handleDeleteMaterial}
+                  onRestoreMaterial={handleRestoreMaterial}
+                />
+              ) : (
+                <ExamDetailPanel
+                  key={item.id}
+                  exam={item}
+                  onExamUpdated={handleExamUpdated}
+                  onExamDeleted={handleExamDeleted}
+                />
+              )
+            )
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Chưa có bài học nào
+              Chưa có nội dung
             </p>
           )}
         </CardContent>
       </Card>
-
-      {/* Exams */}
-      <ExamSection courseId={course.id} initialExams={course.exams ?? []} />
 
       <Card>
         <CardHeader className="pb-3">
@@ -1346,6 +1385,14 @@ export function CourseManagement({
           onClose={() => setSubmitReviewOpen(false)}
           onSubmit={handleSubmitReview}
           courseStatus={course.status}
+        />
+      )}
+
+      {createExamOpen && (
+        <ExamDialog
+          open={createExamOpen}
+          onClose={() => setCreateExamOpen(false)}
+          onSave={handleCreateExam}
         />
       )}
     </div>

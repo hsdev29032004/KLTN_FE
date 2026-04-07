@@ -95,7 +95,7 @@ function ConfirmDialog({
 
 // ─── Exam Dialog (Create / Edit) ──────────────────────────────────────────────
 
-function ExamDialog({
+export function ExamDialog({
   open, onClose, initial, onSave,
 }: {
   open: boolean
@@ -394,7 +394,7 @@ function QuestionItem({
 
 // ─── Exam Detail Panel ────────────────────────────────────────────────────────
 
-function ExamDetailPanel({
+export function ExamDetailPanel({
   exam, onExamUpdated, onExamDeleted,
 }: {
   exam: Exam

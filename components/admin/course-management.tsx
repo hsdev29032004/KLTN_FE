@@ -65,6 +65,7 @@ interface Lesson {
   id: string;
   name: string;
   status: string;
+  createdAt: string;
   materials: Material[];
 }
 
@@ -250,7 +251,89 @@ function RejectDialog({
     </Dialog>
   );
 }
+// ─── Admin Exam Node (read-only, expandable with questions) ──────────────
 
+function AdminExamNode({ exam }: { exam: ExamItem }) {
+  const [open, setOpen] = useState(false);
+  const [questions, setQuestions] = useState<any[] | null>(null);
+  const [loadingQ, setLoadingQ] = useState(false);
+
+  const handleToggle = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen && questions === null) {
+      setLoadingQ(true);
+      const sdk = SDK.getInstance();
+      sdk
+        .getExamDetail(exam.id)
+        .then((res: any) => {
+          const data = res.data ?? res;
+          setQuestions((data.questions ?? []).filter((q: any) => !q.isDeleted));
+        })
+        .catch(() => setQuestions([]))
+        .finally(() => setLoadingQ(false));
+    }
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={handleToggle}>
+      <CollapsibleTrigger asChild>
+        <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 cursor-pointer">
+          <div className="flex items-center gap-2 min-w-0">
+            {open ? (
+              <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            )}
+            <span className="text-sm">📝</span>
+            <span className="text-sm font-medium truncate">{exam.name}</span>
+            <StatusBadge status={exam.status} />
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+            <span>{exam.questionCount} câu/lần</span>
+            <span>{exam.duration} phút</span>
+            <span>{exam.passPercent}% đạt</span>
+            {exam._count && (
+              <span className="text-blue-600">{exam._count.questions} trong ngân hàng</span>
+            )}
+          </div>
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="pl-5 space-y-2 pb-2 pt-1">
+          {loadingQ ? (
+            <p className="text-xs text-muted-foreground">Đang tải câu hỏi...</p>
+          ) : !questions || questions.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Chưa có câu hỏi</p>
+          ) : (
+            questions.map((q: any, idx: number) => (
+              <div key={q.id} className="rounded-md border p-2 space-y-1">
+                <p className="text-xs font-medium">
+                  <span className="text-muted-foreground mr-1">Câu {idx + 1}:</span>
+                  {q.content}
+                </p>
+                <div className="grid grid-cols-2 gap-1">
+                  {(['A', 'B', 'C', 'D'] as const).map((letter) => (
+                    <div
+                      key={letter}
+                      className={`text-xs rounded px-2 py-0.5 ${
+                        letter === q.correctAnswer
+                          ? 'bg-green-100 text-green-700 font-medium dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <span className="font-medium mr-1">{letter}.</span>
+                      {q[`option${letter}`]}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 // ─── Course Detail Dialog ─────────────────────────────────────────────────────
 
 function CourseDetailDialog({
@@ -398,97 +481,74 @@ function CourseDetailDialog({
               </Card>
             )}
 
-            {/* Lessons */}
+            {/* Course Content: lessons + exams merged and sorted by createdAt */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">
-                  Bài học ({course.lessons.length})
+                  Nội dung khóa học ({(course.lessons?.length ?? 0) + (course.exams?.length ?? 0)} mục)
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {course.lessons.map((lesson) => (
-                  <Collapsible key={lesson.id}>
-                    <CollapsibleTrigger asChild>
-                      <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 cursor-pointer">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-medium truncate">
-                            {lesson.name}
-                          </span>
-                          <StatusBadge status={lesson.status} />
-                        </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {lesson.materials.length} tài liệu
-                        </span>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="pl-4 space-y-1 pb-2">
-                        {lesson.materials.map((m) => (
-                          <div
-                            key={m.id}
-                            className="flex items-center gap-2 text-sm py-1 px-2 rounded bg-muted/30"
-                          >
-                            <span>{MATERIAL_ICON[m.type] ?? '📄'}</span>
-                            <span className="truncate flex-1">{m.name}</span>
-                            <StatusBadge status={m.status} />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 shrink-0"
-                              title="Xem học liệu"
-                              onClick={() => handleViewMaterial(m)}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
+              <CardContent className="space-y-1">
+                {[
+                  ...(course.lessons ?? []).map((l: any) => ({ ...l, _type: 'lesson' as const })),
+                  ...(course.exams ?? []).map((e: any) => ({ ...e, _type: 'exam' as const })),
+                ]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.createdAt ?? 0).getTime() -
+                      new Date(b.createdAt ?? 0).getTime(),
+                  )
+                  .map((item) =>
+                    item._type === 'lesson' ? (
+                      <Collapsible key={item.id}>
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 cursor-pointer">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm">📖</span>
+                              <span className="text-sm font-medium truncate">{item.name}</span>
+                              <StatusBadge status={item.status} />
+                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {item.materials?.length ?? 0} tài liệu
+                            </span>
                           </div>
-                        ))}
-                        {lesson.materials.length === 0 && (
-                          <p className="text-xs text-muted-foreground pl-2">
-                            Chưa có tài liệu
-                          </p>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-                {course.lessons.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">
-                    Chưa có bài học
-                  </p>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="pl-7 space-y-1 pb-2">
+                            {(item.materials ?? []).map((m: any) => (
+                              <div
+                                key={m.id}
+                                className="flex items-center gap-2 text-sm py-1 px-2 rounded bg-muted/30"
+                              >
+                                <span>{MATERIAL_ICON[m.type] ?? '📄'}</span>
+                                <span className="truncate flex-1">{m.name}</span>
+                                <StatusBadge status={m.status} />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0"
+                                  title="Xem học liệu"
+                                  onClick={() => handleViewMaterial(m)}
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                            {(item.materials?.length ?? 0) === 0 && (
+                              <p className="text-xs text-muted-foreground pl-2">Chưa có tài liệu</p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ) : (
+                      <AdminExamNode key={item.id} exam={item} />
+                    ),
+                  )}
+                {(course.lessons?.length ?? 0) === 0 && (course.exams?.length ?? 0) === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">Chưa có nội dung</p>
                 )}
               </CardContent>
             </Card>
-
-            {/* Exams */}
-            {course.exams && course.exams.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">
-                    Đề thi ({course.exams.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {course.exams.map((exam) => (
-                    <div
-                      key={exam.id}
-                      className="flex items-center justify-between p-2 rounded-md border"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm">📝</span>
-                        <span className="text-sm font-medium truncate">{exam.name}</span>
-                        <StatusBadge status={exam.status} />
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
-                        <span>{exam.questionCount} câu</span>
-                        <span>{exam.duration} phút</span>
-                        <span>{exam.passPercent}% đạt</span>
-                        {exam._count && <span>{exam._count.questions} trong ngân hàng</span>}
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
 
             {/* Approval History */}
             {approvals.length > 0 && (
