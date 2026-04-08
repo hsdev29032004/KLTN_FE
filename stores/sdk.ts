@@ -1,14 +1,15 @@
-import { AuthRequest } from "./auth/auth-request";
-import { Base } from "./base";
-import { CourseRequest } from "./course/course-request";
-import { BankRequest } from "./bank/bank-request";
-import { PurchaseRequest } from "./purchase/purchase-request";
-import { StatRequest } from "./stat/stat-request";
-import { SystemRequest } from "./system/system-request";
-import { ConversationRequest } from "./conservation/conservation-request";
-import { InvoiceRequest } from "./invoice/invoice-request";
-import { PaymentRequest } from "./payment/payment-request";
-import { ExamRequest } from "./exam/exam-request";
+import { AuthRequest } from './auth/auth-request';
+import { Base } from './base';
+import { CourseRequest } from './course/course-request';
+import { BankRequest } from './bank/bank-request';
+import { PurchaseRequest } from './purchase/purchase-request';
+import { StatRequest } from './stat/stat-request';
+import { SystemRequest } from './system/system-request';
+import { ConversationRequest } from './conservation/conservation-request';
+import { InvoiceRequest } from './invoice/invoice-request';
+import { PaymentRequest } from './payment/payment-request';
+import { ExamRequest } from './exam/exam-request';
+import { UserRequest } from './user/user-request';
 
 function applyMixins(derivedCtor: any, baseCtors: any[]) {
   baseCtors.forEach((baseCtor) => {
@@ -58,7 +59,8 @@ interface SDK
     ConversationRequest,
     InvoiceRequest,
     PaymentRequest,
-    ExamRequest {}
+    ExamRequest,
+    UserRequest {}
 applyMixins(SDK, [
   AuthRequest,
   CourseRequest,
@@ -70,6 +72,7 @@ applyMixins(SDK, [
   InvoiceRequest,
   PaymentRequest,
   ExamRequest,
+  UserRequest,
 ]);
 
 export default SDK;

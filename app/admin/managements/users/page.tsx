@@ -1,7 +1,5 @@
-export default async function ManageUsers() {
-  return (
-    <div>
-      Admin Manage Users Page
-    </div>
-  )
+import { AdminUserManagement } from '@/components/admin/user-management';
+
+export default function ManageUsers() {
+  return <AdminUserManagement />;
 }

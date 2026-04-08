@@ -37,16 +37,51 @@ export interface User {
   email: string;
   fullName: string;
   avatar: string;
+  slug?: string;
+  introduce?: string;
   banId: string | null;
   roleId: string;
   isDeleted: boolean;
   timeBan: string | null;
   timeUnBan: string | null;
+  availableAmount?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
   role: Role;
   ban: Ban | null;
+  _count?: {
+    courses: number;
+    userCourses: number;
+    invoices: number;
+    reviews?: number;
+    transactions?: number;
+  };
+}
+
+export interface AdminUserListParams {
+  search?: string;
+  roleId?: string;
+  roleName?: string;
+  isBanned?: string;
+  isDeleted?: string;
+  fromDate?: string;
+  toDate?: string;
+  page?: string;
+  limit?: string;
+  sortBy?: string;
+  order?: string;
+}
+
+export interface AdminUserListResponse {
+  message: string;
+  data: User[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface UserLoginResponse {
