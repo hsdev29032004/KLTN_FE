@@ -17,6 +17,30 @@ export class StatRequest extends Base {
       method: 'GET',
     });
   }
+
+  async getDashboard(): Promise<{ data: any }> {
+    return this.request('/api/stat/dashboard', { method: 'GET' });
+  }
+
+  async getRevenueStats(params?: Record<string, string>): Promise<{ data: any }> {
+    return this.request('/api/stat/revenue', { method: 'GET', params });
+  }
+
+  async getRevenueByTeacher(params?: Record<string, string>): Promise<{ data: any }> {
+    return this.request('/api/stat/revenue/by-teacher', { method: 'GET', params });
+  }
+
+  async getRevenueByCourse(params?: Record<string, string>): Promise<{ data: any }> {
+    return this.request('/api/stat/revenue/by-course', { method: 'GET', params });
+  }
+
+  async getUserStats(params?: Record<string, string>): Promise<{ data: any }> {
+    return this.request('/api/stat/users', { method: 'GET', params });
+  }
+
+  async getCourseStats(params?: Record<string, string>): Promise<{ data: any }> {
+    return this.request('/api/stat/courses', { method: 'GET', params });
+  }
 }
 
 export const statRequest = new StatRequest();

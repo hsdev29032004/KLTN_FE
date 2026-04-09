@@ -1,7 +1,5 @@
-export default async function Dashboard() {
-  return (
-    <div>
-      Admin Dashboard Page
-    </div>
-  )
+import { AdminDashboard } from '@/components/admin/dashboard';
+
+export default function Dashboard() {
+  return <AdminDashboard />;
 }
