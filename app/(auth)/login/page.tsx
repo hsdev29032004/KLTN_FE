@@ -10,12 +10,14 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useAuthStore } from "@/stores/auth/auth-store";
+import { useCartStore } from "@/stores/cart/cart-store";
 import Link from "next/link"
 import { FormEvent, useState } from "react";
 import { useRedirect } from "@/hooks/use-redirect";
 
 export default function LoginPage() {
   const authStore = useAuthStore();
+  const cartStore = useCartStore();
   const redirect = useRedirect();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,6 +28,10 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const { data } = await authStore.login(email, password);
+      // Only sync localStorage cart to server for trainee (User role)
+      if (data?.user?.role?.name === 'User') {
+        await cartStore.syncLocalCartToServer();
+      }
       redirect(data?.user);
     } catch (error) {
       console.log(error);

@@ -2,6 +2,7 @@
 
 import { useCourseStore } from "@/stores/course/course-store";
 import { usePurchaseStore } from "@/stores/purchase/purchase-store";
+import { useCartStore } from "@/stores/cart/cart-store";
 import type { CourseListItem } from "@/types/course.type";
 import { useEffect, useState, useMemo } from "react";
 
@@ -9,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth/auth-store";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
   const purchaseStore = usePurchaseStore();
   const courseStore = useCourseStore();
+  const cartStore = useCartStore();
   const authStore = useAuthStore();
   const router = useRouter();
 
@@ -41,7 +44,6 @@ export default function CheckoutPage() {
         const response: any = await courseStore.fetchCourses(ids);
         const data: CourseListItem[] = response?.data ?? response ?? [];
         setCourses(data);
-        // mặc định check tất cả
         setCheckedIds(new Set(data.map((c) => c.id)));
       } catch (err) {
         console.error("Error fetching courses for checkout:", err);
@@ -71,11 +73,12 @@ export default function CheckoutPage() {
     if (checkedCourses.length === 0) return;
     setPaying(true);
     try {
-      const res = await purchaseStore.purchaseCourse(checkedCourses.map((c) => c.id));
-      if ((res as any).data?.error) return;
-      authStore.fetchMe();
-      purchaseStore.clearCourseSelected();
-      router.push("/my-courses/purchased");
+      const res: any = await cartStore.purchaseCourses(checkedCourses.map((c) => c.id));
+      const paymentUrl = res.paymentUrl;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+        return;
+      }
     } catch (err: any) {
       const message = err?.response?.data?.message ?? err?.message ?? "Lỗi thanh toán";
       console.error(message);

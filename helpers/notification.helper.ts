@@ -29,14 +29,8 @@ export const showApiNotification = {
         // Only show notification if message exists
         if (!message) return;
 
-        // Determine notification type based on status code
-        if (status >= 200 && status < 300) {
-            // Success (2xx)
-            toast.success(message);
-        } else if (status >= 300 && status < 400) {
-            // Redirect (3xx) - treat as info
-            toast.info(message);
-        } else if (status >= 400 && status < 500) {
+        // Only show error notifications (4xx, 5xx)
+        if (status >= 400 && status < 500) {
             // Client error (4xx)
             toast.error(message);
         } else if (status >= 500) {

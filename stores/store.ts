@@ -12,6 +12,7 @@ import systemReducer from "./system/system-slice";
 import invoiceReducer from "./invoice/invoice-slice";
 import paymentReducer from "./payment/payment-slice";
 import conversationReducer from "./conservation/conservation-slice";
+import cartReducer from "./cart/cart-slice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   invoice: invoiceReducer,
   payment: paymentReducer,
   conversation: conversationReducer,
+  cart: cartReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

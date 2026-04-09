@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, ShoppingCart, Bell, Wallet, Moon, Sun, MessageSquare } from 'lucide-react';
+import { Search, ShoppingCart, Moon, Sun, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,47 +18,35 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
-import { useBankStore } from '@/stores/bank/bank-store';
-import { usePaymentStore } from '@/stores/payment/payment-store';
+import { useCartStore } from '@/stores/cart/cart-store';
 import { useConversationStore } from '@/stores/conservation/conservation-store';
 import { useChatSocket } from '@/hooks/use-chat-socket';
-import { BankSelectionDialog } from '../payment/bank-selection-dialog';
-import { formatMoney } from '@/helpers/format.helper';
 
 export function LandingHeader() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const authStore = useAuthStore();
-  const [showBankDialog, setShowBankDialog] = useState(false);
-
-  const { list: banks, loading: banksLoading, fetchBanks } = useBankStore();
-  const { loading: depositing, createPaymentUrl } = usePaymentStore();
+  const cartStore = useCartStore();
   const { list: conversations, fetchMyConversations } = useConversationStore();
   useChatSocket();
 
   const user = authStore.user;
 
-  useEffect(() => {
-    fetchBanks();
-  }, []);
+  const isTrainee = user?.role?.name === 'User';
 
+  // Initialize cart
   useEffect(() => {
     if (user) {
+      if (isTrainee) {
+        cartStore.fetchCart();
+      }
       fetchMyConversations();
+    } else {
+      cartStore.initLocalCart();
     }
   }, [user]);
 
-  const handleDeposit = async (amount: number) => {
-    try {
-      const result = await createPaymentUrl(amount);
-      const paymentUrl = (result as { url: string; transactionId: string })?.url;
-      if (paymentUrl) {
-        window.location.href = paymentUrl;
-      }
-    } catch (error) {
-      console.error('Deposit failed:', error);
-    }
-  };
+  const cartCount = isTrainee ? (cartStore.count || 0) : !user ? (cartStore.localCartIds?.length || 0) : 0;
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -67,6 +55,7 @@ export function LandingHeader() {
   const handleLogout = async () => {
     try {
       await authStore.logout();
+      cartStore.initLocalCart();
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -102,43 +91,23 @@ export function LandingHeader() {
             <span className="sr-only">Toggle theme</span>
           </Button>
 
+          {/* Cart - visible to guests and trainees only */}
+          {(!user || isTrainee) && (
+            <Button variant="ghost" size="icon" className="relative" asChild>
+              <Link href="/cart">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+                <span className="sr-only">Giỏ hàng</span>
+              </Link>
+            </Button>
+          )}
+
           {user ? (
             <>
-              {/* Wallet Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="hidden md:flex items-center gap-2"
-                  >
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold">
-                      {formatMoney(user.availableAmount || 0)}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setTimeout(() => setShowBankDialog(true), 0)}
-                  >
-                    Nạp tiền
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => router.push('/withdrawal-demo')}
-                  >
-                    Rút tiền
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Cart */}
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/cart">
-                  <ShoppingCart className="h-5 w-5" />
-                  <span className="sr-only">Giỏ hàng</span>
-                </Link>
-              </Button>
-
               {/* Messages */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -231,7 +200,7 @@ export function LandingHeader() {
                     <Link href="/my-courses">Khóa học của tôi</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/transactions/history">Lịch sử giao dịch</Link>
+                    <Link href="/transactions/history">Lịch sử mua hàng</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -258,14 +227,6 @@ export function LandingHeader() {
           )}
         </div>
       </div>
-      <BankSelectionDialog
-        open={showBankDialog}
-        onOpenChange={setShowBankDialog}
-        onDeposit={handleDeposit}
-        banks={banks || []}
-        loading={banksLoading}
-        depositing={depositing}
-      />
     </header>
   );
 }

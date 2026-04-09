@@ -85,14 +85,14 @@ export interface MyInvoiceDetailItem {
 export interface MyInvoice {
   id: string;
   amount: number;
-  status: 'purchased' | 'refunded';
+  status: 'pending' | 'purchased' | 'failed' | 'refund_requested' | 'refunded';
   createdAt: string;
   updatedAt: string;
   detail_invoices: MyInvoiceDetailItem[];
 }
 
 export interface MyInvoiceListParams {
-  status?: 'purchased' | 'refunded';
+  status?: 'pending' | 'purchased' | 'failed' | 'refund_requested' | 'refunded';
   fromDate?: string;
   toDate?: string;
   page?: number;

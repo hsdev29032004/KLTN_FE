@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Star, Users, BookOpen, Clock, Heart, ShoppingCart, FileQuestion } from 'lucide-react';
+import { Star, Users, BookOpen, Clock, ShoppingCart, FileQuestion } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,8 @@ import { Separator } from '@/components/ui/separator';
 import { Course, ICourseReview, Lesson, CourseExam } from '@/types/course.type';
 import { usePurchaseStore } from '@/stores/purchase/purchase-store';
 import { useCourseStore } from '@/stores/course/course-store';
+import { useCartStore } from '@/stores/cart/cart-store';
+import { useAuthStore } from '@/stores/auth/auth-store';
 import { useAppStore } from '@/stores/app/app-store';
 import MediaModal from '@/components/media-modal';
 import { LessonItem } from './lesson-item';
@@ -84,12 +86,15 @@ export function CourseDetail({
   instructor,
   relatedCourses,
 }: CourseDetailProps) {
-  console.log(course);
-  
   const router = useRouter();
   const purchaseStore = usePurchaseStore();
   const courseStore = useCourseStore();
+  const cartStore = useCartStore();
+  const authStore = useAuthStore();
   const appStore = useAppStore();
+
+  const isTrainee = authStore.user?.role?.name === 'User';
+  const [buyingNow, setBuyingNow] = useState(false);
 
   const [media, setMedia] = useState<MediaState>({
     open: false,
@@ -109,9 +114,35 @@ export function CourseDetail({
     ...courseExams.filter((e) => e.status === 'published').map((e) => ({ ...e, _type: 'exam' as const })),
   ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  const handleBuy = async () => {
-    await purchaseStore.addCourseSelected(course.id);
-    router.push('/payment/checkout');
+  const handleBuyNow = async () => {
+    if (!authStore.user) {
+      router.push('/login');
+      return;
+    }
+    setBuyingNow(true);
+    try {
+      const res: any = await cartStore.purchaseCourses([course.id]);
+      const paymentUrl = res?.paymentUrl;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+        return;
+      }
+    } catch (e) {
+      console.error('buy now error', e);
+    } finally {
+      setBuyingNow(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!authStore.user || !isTrainee) {
+      // Guest or non-trainee: save to localStorage
+      cartStore.addToLocalCart(course.id);
+    } else {
+      // Trainee: save to server
+      await cartStore.addToCart([course.id]);
+      await cartStore.fetchCart();
+    }
   };
 
   const handlePreview = async (material: any) => {
@@ -183,13 +214,16 @@ export function CourseDetail({
                 <p className="mb-1 text-3xl font-bold">{formatVND(course.price)}</p>
                 <p className="mb-6 text-sm text-muted-foreground">Giá hiện tại</p>
 
-                <Button onClick={handleBuy} className="mb-3 w-full gap-2" size="lg">
-                  <ShoppingCart className="h-5 w-5" />
-                  Mua ngay
+                <Button onClick={handleBuyNow} className="mb-3 w-full gap-2" size="lg" disabled={buyingNow}>
+                  {buyingNow ? (
+                    <><span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Đang xử lý...</>
+                  ) : (
+                    <><ShoppingCart className="h-5 w-5" /> Mua ngay</>
+                  )}
                 </Button>
-                <Button variant="outline" className="w-full gap-2">
-                  <Heart className="h-5 w-5" />
-                  Yêu thích
+                <Button variant="outline" className="w-full gap-2" onClick={handleAddToCart}>
+                  <ShoppingCart className="h-5 w-5" />
+                  Thêm vào giỏ hàng
                 </Button>
 
                 <Separator className="my-4" />

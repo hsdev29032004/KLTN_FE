@@ -6,6 +6,8 @@ export const publicRoutes = [
   '/reset-password',
   '/courses',
   '/courses/:id',
+  '/cart',
+  '/payment',
   '/about',
   '/contact',
   '/terms',

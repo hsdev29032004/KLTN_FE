@@ -42,7 +42,10 @@ function formatDate(dateStr: string) {
 }
 
 const INVOICE_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  purchased: { label: 'Đã mua', color: 'bg-green-100 text-green-800' },
+  pending: { label: 'Đang chờ', color: 'bg-yellow-100 text-yellow-800' },
+  purchased: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-800' },
+  failed: { label: 'Thất bại', color: 'bg-red-100 text-red-800' },
+  refund_requested: { label: 'Yêu cầu hoàn', color: 'bg-blue-100 text-blue-800' },
   refunded: { label: 'Đã hoàn tiền', color: 'bg-orange-100 text-orange-800' },
 };
 
@@ -101,11 +104,10 @@ function InvoiceDetailDialog({
                 <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
                   <div className="relative w-20 h-14 shrink-0 rounded overflow-hidden bg-muted">
                     {item.courses.thumbnail ? (
-                      <Image
+                      <img
                         src={item.courses.thumbnail}
                         alt={item.courses.name}
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full bg-muted" />
@@ -147,7 +149,7 @@ export function UserInvoiceTable() {
   const { myInvoices, myInvoicesLoading, myInvoicesMeta, fetchMyInvoices } = useInvoiceStore();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [status, setStatus] = useState<'purchased' | 'refunded' | 'all'>('all');
+  const [status, setStatus] = useState<'pending' | 'purchased' | 'failed' | 'refund_requested' | 'refunded' | 'all'>('all');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -179,7 +181,9 @@ export function UserInvoiceTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả trạng thái</SelectItem>
-            <SelectItem value="purchased">Đã mua</SelectItem>
+            <SelectItem value="pending">Đang chờ thanh toán</SelectItem>
+            <SelectItem value="purchased">Đã thanh toán</SelectItem>
+            <SelectItem value="failed">Thất bại</SelectItem>
             <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
           </SelectContent>
         </Select>
