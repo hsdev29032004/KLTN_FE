@@ -1,4 +1,4 @@
-import { CourseDetailResponse, CourseListItem, CourseApproval, Lesson, Material } from '@/types/course.type';
+import { CourseDetailResponse, CourseListItem, CourseApproval, Lesson, Material, CourseSearchParams, CourseSearchResponse } from '@/types/course.type';
 import { Base } from '../base';
 
 export class CourseRequest extends Base {
@@ -37,6 +37,25 @@ export class CourseRequest extends Base {
 
   async getCourseByUserId(userId: string): Promise<{ data: CourseListItem[] }> {
     return this.request(`/api/course/user/${userId}`, {
+      method: 'GET',
+    });
+  }
+
+  async searchCourses(params: CourseSearchParams): Promise<CourseSearchResponse> {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== '' && value !== null) {
+        searchParams.set(key, String(value));
+      }
+    });
+    return this.request(`/api/course/search?${searchParams.toString()}`, {
+      method: 'GET',
+    });
+  }
+
+  // ── Topics ─────────────────────────────────────────────────────────────
+  async getAllTopics(): Promise<{ data: { id: string; name: string; slug: string }[] }> {
+    return this.request('/api/topic', {
       method: 'GET',
     });
   }

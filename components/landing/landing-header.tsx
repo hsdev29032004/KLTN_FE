@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth/auth-store';
 import { useCartStore } from '@/stores/cart/cart-store';
 import { useConversationStore } from '@/stores/conservation/conservation-store';
@@ -33,6 +33,19 @@ export function LandingHeader() {
   const user = authStore.user;
 
   const isTrainee = user?.role?.name === 'User';
+
+  const searchParams = useSearchParams();
+  const [searchValue, setSearchValue] = useState(searchParams.get('name') || '');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchValue.trim();
+    if (trimmed) {
+      router.push(`/search?name=${encodeURIComponent(trimmed)}`);
+    } else {
+      router.push('/search');
+    }
+  };
 
   // Initialize cart
   useEffect(() => {
@@ -72,14 +85,16 @@ export function LandingHeader() {
 
         {/* Search */}
         <div className="flex flex-1 items-center gap-2">
-          <div className="relative w-full max-w-lg">
+          <form onSubmit={handleSearch} className="relative w-full max-w-lg">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Tìm kiếm khóa học..."
               className="w-full pl-9"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
             />
-          </div>
+          </form>
         </div>
 
         {/* Right Section */}

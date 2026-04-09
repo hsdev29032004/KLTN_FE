@@ -3,17 +3,19 @@ import {
   fetchCourses,
   fetchCourseBySlug,
   fetchPurchasedCourses,
+  searchCourses,
   setList,
   setSelected,
   clearSelected,
   setPurchasedList,
   clearPurchasedList,
+  clearSearchResults,
   fetchMaterialUrl,
   fetchCourseByUserId,
 } from './course-slice';
 import type { RootState } from '@/stores/store';
 import { useAppDispatch } from '@/hooks/use-app-dispatch';
-import type { CourseListItem, CourseDetailResponse } from '@/types/course.type';
+import type { CourseListItem, CourseDetailResponse, CourseSearchParams } from '@/types/course.type';
 
 export function useCourseStore() {
   const dispatch = useAppDispatch();
@@ -29,6 +31,15 @@ export function useCourseStore() {
     (state: RootState) => state.course?.loadingPurchasedList,
   );
   const error = useSelector((state: RootState) => state.course?.error);
+  const searchResults = useSelector(
+    (state: RootState) => state.course?.searchResults,
+  );
+  const searchMeta = useSelector(
+    (state: RootState) => state.course?.searchMeta,
+  );
+  const loadingSearch = useSelector(
+    (state: RootState) => state.course?.loadingSearch,
+  );
 
   return {
     list,
@@ -50,5 +61,12 @@ export function useCourseStore() {
     clearPurchasedList: () => dispatch(clearPurchasedList()),
     fetchCourseByUserId: (userId: string) =>
       dispatch(fetchCourseByUserId(userId)),
+    // Search
+    searchResults,
+    searchMeta,
+    loadingSearch,
+    searchCourses: (params: CourseSearchParams) =>
+      dispatch(searchCourses(params)),
+    clearSearchResults: () => dispatch(clearSearchResults()),
   };
 }

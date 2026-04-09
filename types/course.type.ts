@@ -122,6 +122,38 @@ export interface CourseDetailResponse {
 
 export type Course = CourseListItem | CourseDetailResponse
 
+// ─── Search ─────────────────────────────────────────────────────────────────
+
+export interface CourseSearchParams {
+  name?: string
+  teacherId?: string
+  teacherName?: string
+  topicId?: string
+  minPrice?: number
+  maxPrice?: number
+  minStar?: number
+  maxStar?: number
+  fromDate?: string
+  toDate?: string
+  sortBy?: 'createdAt' | 'price' | 'star' | 'studentCount'
+  sortOrder?: 'asc' | 'desc'
+  page?: number
+  limit?: number
+}
+
+export interface CourseSearchMeta {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export interface CourseSearchResponse {
+  message: string
+  data: CourseListItem[]
+  meta: CourseSearchMeta
+}
+
 // ─── Approval System ────────────────────────────────────────────────────────
 
 export type CourseStatus = 'draft' | 'pending' | 'published' | 'update' | 'rejected' | 'need_update'
