@@ -110,12 +110,6 @@ export class CourseRequest extends Base {
     });
   }
 
-  async getCourseApprovals(courseId: string): Promise<{ data: CourseApproval[] }> {
-    return this.request(`/api/course/${courseId}/approvals`, {
-      method: 'GET',
-    });
-  }
-
   async getAllCoursesAdmin(): Promise<{ data: CourseListItem[] }> {
     return this.request('/api/course/admin/all', {
       method: 'GET',

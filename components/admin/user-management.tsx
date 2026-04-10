@@ -114,7 +114,6 @@ const SORT_OPTIONS = [
   { value: 'createdAt', label: 'Ngày tạo' },
   { value: 'fullName', label: 'Họ tên' },
   { value: 'email', label: 'Email' },
-  { value: 'availableAmount', label: 'Số dư' },
 ];
 
 function RoleBadge({ roleName }: { roleName: string }) {
@@ -528,20 +527,6 @@ function UserDetailDrawer({
                       từ hệ thống.
                     </p>
                   </div>
-                  <div className="grid gap-1.5">
-                    <Label>Số dư (VND)</Label>
-                    <Input
-                      type="number"
-                      value={editForm.availableAmount}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          availableAmount: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -564,14 +549,6 @@ function UserDetailDrawer({
                       Giới thiệu
                     </Label>
                     <p className="text-sm">{user.introduce || 'Chưa có'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">
-                      Số dư
-                    </Label>
-                    <p className="text-sm font-medium">
-                      {formatMoney(user.availableAmount ?? 0)}
-                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -719,17 +696,6 @@ function UserDetailDrawer({
                     >
                       <Shield className="mr-1 h-4 w-4" />
                       Cấm
-                    </Button>
-                  )}
-                  {user.isDeleted ? (
-                    <Button variant="outline" onClick={handleRestore}>
-                      <RotateCcw className="mr-1 h-4 w-4" />
-                      Khôi phục
-                    </Button>
-                  ) : (
-                    <Button variant="destructive" onClick={handleDelete}>
-                      <Trash2 className="mr-1 h-4 w-4" />
-                      Xóa
                     </Button>
                   )}
                 </div>
@@ -1101,19 +1067,6 @@ export function AdminUserManagement() {
                   <TableHead>
                     <button
                       className="flex items-center gap-1 hover:text-foreground"
-                      onClick={() => handleSort('availableAmount')}
-                    >
-                      Số dư
-                      {sortBy === 'availableAmount' && (
-                        <span className="text-xs">
-                          {order === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      className="flex items-center gap-1 hover:text-foreground"
                       onClick={() => handleSort('createdAt')}
                     >
                       Ngày tạo
@@ -1158,11 +1111,6 @@ export function AdminUserManagement() {
                       <BanStatusBadge user={user} />
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">
-                        {formatMoney(user.availableAmount ?? 0)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
                       <span className="text-sm text-muted-foreground">
                         {formatDateShort(user.createdAt)}
                       </span>
@@ -1174,71 +1122,11 @@ export function AdminUserManagement() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
+                            onClick={() => openDrawer(user.id)}
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openDrawer(user.id)}>
-                            Chi tiết
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {user.banId ? (
-                            <DropdownMenuItem
-                              onClick={async () => {
-                                try {
-                                  const sdk = SDK.getInstance();
-                                  await sdk.unbanUser(user.id);
-                                  fetchUsers();
-                                } catch {
-                                  /* interceptor */
-                                }
-                              }}
-                            >
-                              <ShieldOff className="mr-2 h-4 w-4" />
-                              Bỏ cấm
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              onClick={() => openDrawer(user.id)}
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Cấm
-                            </DropdownMenuItem>
-                          )}
-                          {user.isDeleted ? (
-                            <DropdownMenuItem
-                              onClick={async () => {
-                                try {
-                                  const sdk = SDK.getInstance();
-                                  await sdk.restoreUser(user.id);
-                                  fetchUsers();
-                                } catch {
-                                  /* interceptor */
-                                }
-                              }}
-                            >
-                              <RotateCcw className="mr-2 h-4 w-4" />
-                              Khôi phục
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={async () => {
-                                try {
-                                  const sdk = SDK.getInstance();
-                                  await sdk.deleteUser(user.id);
-                                  fetchUsers();
-                                } catch {
-                                  /* interceptor */
-                                }
-                              }}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Xóa
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>

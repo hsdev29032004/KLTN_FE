@@ -315,11 +315,10 @@ function AdminExamNode({ exam }: { exam: ExamItem }) {
                   {(['A', 'B', 'C', 'D'] as const).map((letter) => (
                     <div
                       key={letter}
-                      className={`text-xs rounded px-2 py-0.5 ${
-                        letter === q.correctAnswer
-                          ? 'bg-green-100 text-green-700 font-medium dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-muted'
-                      }`}
+                      className={`text-xs rounded px-2 py-0.5 ${letter === q.correctAnswer
+                        ? 'bg-green-100 text-green-700 font-medium dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-muted'
+                        }`}
                     >
                       <span className="font-medium mr-1">{letter}.</span>
                       {q[`option${letter}`]}
@@ -391,13 +390,10 @@ function CourseDetailDialog({
     const sdk = SDK.getInstance();
     Promise.all([
       sdk.getCourseBySlugOrId(courseId),
-      sdk.getCourseApprovals(courseId).catch(() => ({ data: [] })),
     ])
-      .then(([courseRes, appRes]) => {
+      .then(([courseRes]) => {
         const courseData = (courseRes as any).data || courseRes;
         setCourse(courseData);
-        const appData = (appRes as any).data || appRes;
-        if (Array.isArray(appData)) setApprovals(appData);
       })
       .catch(() => toast.error('Không thể tải thông tin khóa học'))
       .finally(() => setLoading(false));
@@ -732,106 +728,106 @@ export function AdminCourseManagement() {
       {/* Course Table */}
       <Card>
         <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
-            ) : filteredCourses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mb-2 opacity-50" />
-                <p>Không có khóa học nào</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Khóa học</TableHead>
-                    <TableHead>Giảng viên</TableHead>
-                    <TableHead>Giá</TableHead>
-                    <TableHead>Học viên</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCourses.map((course) => {
-                    const canApprove =
-                      course.status === 'pending' || course.status === 'update';
-                    return (
-                      <TableRow key={course.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {course.thumbnail && (
-                              <img
-                                src={course.thumbnail}
-                                alt=""
-                                className="h-10 w-16 rounded object-cover shrink-0"
-                              />
-                            )}
-                            <span className="font-medium truncate max-w-50">
-                              {course.name}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm">
-                            {course.user.fullName}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <BookOpen className="h-12 w-12 mb-2 opacity-50" />
+              <p>Không có khóa học nào</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Khóa học</TableHead>
+                  <TableHead>Giảng viên</TableHead>
+                  <TableHead>Giá</TableHead>
+                  <TableHead>Học viên</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCourses.map((course) => {
+                  const canApprove =
+                    course.status === 'pending' || course.status === 'update';
+                  return (
+                    <TableRow key={course.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {course.thumbnail && (
+                            <img
+                              src={course.thumbnail}
+                              alt=""
+                              className="h-10 w-16 rounded object-cover shrink-0"
+                            />
+                          )}
+                          <span className="font-medium truncate max-w-50">
+                            {course.name}
                           </span>
-                        </TableCell>
-                        <TableCell>{formatCurrency(course.price)}</TableCell>
-                        <TableCell>{course.studentCount}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={course.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Xem chi tiết"
-                              onClick={() => setSelectedCourseId(course.id)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {canApprove && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-green-600 hover:text-green-700"
-                                  title="Phê duyệt"
-                                  onClick={() => handleApprove(course.id)}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-red-600 hover:text-red-700"
-                                  title="Từ chối"
-                                  onClick={() =>
-                                    setRejectDialog({
-                                      open: true,
-                                      courseId: course.id,
-                                      courseName: course.name,
-                                    })
-                                  }
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {course.user.fullName}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatCurrency(course.price)}</TableCell>
+                      <TableCell>{course.studentCount}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={course.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Xem chi tiết"
+                            onClick={() => setSelectedCourseId(course.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {canApprove && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-green-600 hover:text-green-700"
+                                title="Phê duyệt"
+                                onClick={() => handleApprove(course.id)}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700"
+                                title="Từ chối"
+                                onClick={() =>
+                                  setRejectDialog({
+                                    open: true,
+                                    courseId: course.id,
+                                    courseName: course.name,
+                                  })
+                                }
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Course Detail Dialog */}
       {selectedCourseId && (

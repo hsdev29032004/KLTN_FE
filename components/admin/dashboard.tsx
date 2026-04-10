@@ -594,46 +594,6 @@ export function AdminDashboard() {
         )}
       </div>
 
-      {/* Course status distribution */}
-      {dashboard?.distributions.coursesByStatus && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <CourseStatusChart data={dashboard.distributions.coursesByStatus} />
-          {/* Placeholder for additional chart slot */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Chờ xử lý
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {dashboard.pending && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Khóa học chờ duyệt</span>
-                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
-                      {dashboard.pending.approvals}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Báo cáo vi phạm</span>
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
-                      {dashboard.pending.reports}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Yêu cầu rút tiền</span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                      {dashboard.pending.withdrawals}
-                    </Badge>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Top teachers & courses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TopTeachersCard data={topTeachers} />

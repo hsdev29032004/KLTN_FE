@@ -914,7 +914,7 @@ export function CourseManagement({
     open: false,
     title: '',
     description: '',
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   // ── Exam state & merged content ─────────────────────────────────────────
@@ -923,7 +923,7 @@ export function CourseManagement({
     ...course.lessons.map((l) => ({ ...l, _type: 'lesson' as const })),
     ...exams.map((e) => ({ ...e, _type: 'exam' as const })),
   ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
-  [course.lessons, exams]);
+    [course.lessons, exams]);
 
   const handleExamUpdated = (updated: any) => {
     setExams((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
@@ -992,25 +992,12 @@ export function CourseManagement({
   const isWaitingApproval = ['pending', 'update'].includes(course.status);
   const latestRejection = approvals.find((a) => a.status === 'rejected');
 
-  useEffect(() => {
-    sdk.getCourseApprovals(course.id)
-      .then((res: any) => {
-        const data = (res as any).data || res;
-        if (Array.isArray(data)) setApprovals(data);
-      })
-      .catch(() => {});
-  }, [course.id, course.status]);
-
   const handleSubmitReview = async (description: string) => {
     try {
       await sdk.submitForReview(course.id, { description });
       const res = await sdk.getCourseBySlugOrId(course.id);
       const data = (res as any).data || res;
       setCourse((prev) => ({ ...prev, ...data }));
-      // Refresh approvals
-      const appRes = await sdk.getCourseApprovals(course.id);
-      const appData = (appRes as any).data || appRes;
-      if (Array.isArray(appData)) setApprovals(appData);
     } catch {
       /* interceptor */
     }
@@ -1360,11 +1347,11 @@ export function CourseManagement({
           initial={
             materialDialog.material
               ? {
-                  id: materialDialog.material.id,
-                  name: materialDialog.material.name,
-                  url: materialDialog.material.url,
-                  type: materialDialog.material.type,
-                }
+                id: materialDialog.material.id,
+                name: materialDialog.material.name,
+                url: materialDialog.material.url,
+                type: materialDialog.material.type,
+              }
               : undefined
           }
           onSave={handleSaveMaterial}
