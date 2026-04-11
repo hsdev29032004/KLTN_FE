@@ -61,14 +61,10 @@ export function SignupForm({
         role: role === "trainee" ? "User" : "Teacher",
       })
 
-      toast.success("Đăng ký thành công", {
-        description: "Vui lòng đăng nhập để tiếp tục.",
-      })
+      toast.success("Đăng ký thành công")
 
       router.push("/login")
     } catch (err: any) {
-      const message = err?.response?.data?.message ?? err?.message ?? "Đã có lỗi khi đăng ký."
-      toast.error("Đăng ký thất bại", { description: message })
     } finally {
       setLoading(false)
     }
