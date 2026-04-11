@@ -20,6 +20,7 @@ import { useAppStore } from '@/stores/app/app-store';
 import MediaModal from '@/components/media-modal';
 import { LessonItem } from './lesson-item';
 import { CourseReviews } from '@/components/course/course-reviews';
+import DOMPurify from 'dompurify';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -170,7 +171,6 @@ export function CourseDetail({
           {/* Left: course info */}
           <div className="md:col-span-2">
             <h1 className="mb-4 text-4xl font-bold">{course.name}</h1>
-            <p className="mb-6 text-lg text-muted-foreground">{course.description}</p>
 
             <div className="mb-6 flex flex-wrap gap-6">
               <div className="flex items-center gap-2">
@@ -197,7 +197,15 @@ export function CourseDetail({
                 </ul>
               </div>
             )}
-          </div>
+
+            <div className="mb-8 border-t pt-6"><h3 className="mb-4 text-lg font-semibold">Mô tả khóa học</h3>
+              <div
+                className="mb-6 text-lg"
+                style={{ textOverflow: 'ellipsis' }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(course.description || '') }}
+              />
+            </div></div>
+
 
           {/* Right: purchase card */}
           <div>
