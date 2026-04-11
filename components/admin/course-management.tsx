@@ -394,6 +394,7 @@ function CourseDetailDialog({
       .then(([courseRes]) => {
         const courseData = (courseRes as any).data || courseRes;
         setCourse(courseData);
+        setApprovals(courseData?.approvals ?? []);
       })
       .catch(() => toast.error('Không thể tải thông tin khóa học'))
       .finally(() => setLoading(false));
@@ -443,6 +444,18 @@ function CourseDetailDialog({
                 </p>
               </div>
             </div>
+
+            {/* Lý do cập nhật (nếu có) */}
+            {(course.status === 'need_update' || course.status === 'update') && approvals[0]?.description && (
+              <Card className="border-purple-300 bg-purple-50 dark:bg-purple-950/20">
+                <CardContent className="pt-4">
+                  <p className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-1">
+                    Lý do cập nhật từ giảng viên:
+                  </p>
+                  <p className="text-sm">{approvals[0].description}</p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Latest Pending Approval Description */}
             {latestPendingApproval && (
