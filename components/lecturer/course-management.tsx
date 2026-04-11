@@ -989,6 +989,10 @@ export function CourseManagement({
   const [approvals, setApprovals] = useState<CourseApproval[]>(initialCourse.approvals ?? []);
 
   const canSubmitReview = ['draft', 'rejected', 'published', 'need_update'].includes(course.status);
+  // Có ít nhất 1 bài học và trong các bài học có ít nhất 1 học liệu
+  const hasContentForReview = Boolean(
+    course.lessons && course.lessons.length > 0 && course.lessons.some((l) => (l.materials && l.materials.length > 0)),
+  );
   const isWaitingApproval = ['pending', 'update'].includes(course.status);
   const latestRejection = approvals.find((a) => a.status === 'rejected');
 
@@ -1123,12 +1127,19 @@ export function CourseManagement({
             <Pencil className="h-4 w-4 mr-1.5" />
             Sửa
           </Button>
-          <Button variant="destructive" size="sm" onClick={handleDeleteCourse}>
-            <Trash2 className="h-4 w-4 mr-1.5" />
-            Ngừng kinh doanh
-          </Button>
+          {!['draft', 'rejected'].includes(course.status) && (
+            <Button variant="destructive" size="sm" onClick={handleDeleteCourse}>
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              Ngừng kinh doanh
+            </Button>
+          )}
           {canSubmitReview && (
-            <Button size="sm" onClick={() => setSubmitReviewOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => setSubmitReviewOpen(true)}
+              disabled={!hasContentForReview}
+              title={!hasContentForReview ? 'Cần ít nhất 1 bài học có tài liệu để gửi xét duyệt' : undefined}
+            >
               <Send className="h-4 w-4 mr-1.5" />
               Gửi xét duyệt
             </Button>

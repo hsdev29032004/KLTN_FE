@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Message } from '@/types/conversation.type';
 import { useConversationStore } from '@/stores/conservation/conservation-store';
+import { useAuthStore } from '@/stores/auth/auth-store';
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -12,9 +13,12 @@ let globalSocket: Socket | null = null;
 
 export function useChatSocket() {
   const { addNewMessage } = useConversationStore();
+  const authStore = useAuthStore();
   const joinedRooms = useRef<Set<string>>(new Set());
-
   useEffect(() => {
+    // Only initialize socket when there is an authenticated user
+    if (!authStore.user) return;
+
     if (globalSocket?.connected) return;
 
     globalSocket = io(`${SOCKET_URL}/chat`, {
@@ -33,7 +37,7 @@ export function useChatSocket() {
     return () => {
       // Don't disconnect on unmount — keep alive across page navigations
     };
-  }, []);
+  }, [authStore.user]);
 
   // Listen for new messages and dispatch to redux
   useEffect(() => {

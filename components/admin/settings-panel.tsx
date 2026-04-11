@@ -185,7 +185,7 @@ export default function SettingsPanel({ initialSystem, initialBanks }: SettingsP
   useEffect(() => {
     bankStore.setList(initialBanks);
     systemStore.setData(initialSystem);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const banks = bankStore.list?.length ? bankStore.list : initialBanks;
@@ -204,6 +204,11 @@ export default function SettingsPanel({ initialSystem, initialBanks }: SettingsP
   // ── System handlers ──────────────────────────────────────────────────────
 
   const handleSaveSystem = async () => {
+    const rate = Number(commissionRate);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      toast.error('Tỉ lệ hoa hồng phải là số từ 0 đến 100');
+      return;
+    }
     setSavingSystem(true);
     try {
       const term = termEditorRef.current?.getContent() ?? system.term;
@@ -252,53 +257,53 @@ export default function SettingsPanel({ initialSystem, initialBanks }: SettingsP
         </CardHeader>
         <CardContent>
           <div className="overflow-y-auto" style={{ maxHeight: 500 }}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tên ngân hàng</TableHead>
-                <TableHead>Số tài khoản</TableHead>
-                <TableHead>Chủ tài khoản</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {banks.length === 0 && (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                    Chưa có tài khoản ngân hàng nào
-                  </TableCell>
+                  <TableHead>Tên ngân hàng</TableHead>
+                  <TableHead>Số tài khoản</TableHead>
+                  <TableHead>Chủ tài khoản</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
-              )}
-              {banks.map((bank) => (
-                <TableRow key={bank.id}>
-                  <TableCell className="font-medium">{bank.bankName}</TableCell>
-                  <TableCell className="font-mono">{bank.bankNumber}</TableCell>
-                  <TableCell>{bank.recipient}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(bank)}
-                        title="Chỉnh sửa"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => openDelete(bank)}
-                        title="Xóa"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {banks.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      Chưa có tài khoản ngân hàng nào
+                    </TableCell>
+                  </TableRow>
+                )}
+                {banks.map((bank) => (
+                  <TableRow key={bank.id}>
+                    <TableCell className="font-medium">{bank.bankName}</TableCell>
+                    <TableCell className="font-mono">{bank.bankNumber}</TableCell>
+                    <TableCell>{bank.recipient}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(bank)}
+                          title="Chỉnh sửa"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => openDelete(bank)}
+                          title="Xóa"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -357,11 +362,11 @@ export default function SettingsPanel({ initialSystem, initialBanks }: SettingsP
         initial={
           bankDialog.bank
             ? {
-                id: bankDialog.bank.id,
-                bankName: bankDialog.bank.bankName,
-                bankNumber: bankDialog.bank.bankNumber,
-                recipient: bankDialog.bank.recipient,
-              }
+              id: bankDialog.bank.id,
+              bankName: bankDialog.bank.bankName,
+              bankNumber: bankDialog.bank.bankNumber,
+              recipient: bankDialog.bank.recipient,
+            }
             : undefined
         }
         onSave={handleSaveBank}
