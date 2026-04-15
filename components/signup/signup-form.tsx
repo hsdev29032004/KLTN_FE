@@ -34,6 +34,8 @@ export function SignupForm({
   const [role, setRole] = useState<"trainee" | "lecturer" | "">("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [bankNumber, setbankNumber] = useState("")
+  const [bankName, setbankName] = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,6 +61,8 @@ export function SignupForm({
         email,
         password,
         role: role === "trainee" ? "User" : "Teacher",
+        bankNumber: bankNumber || undefined,
+        bankName: bankName || undefined,
       })
 
       toast.success("Đăng ký thành công")
@@ -98,6 +102,14 @@ export function SignupForm({
               <SelectItem value="lecturer">Lecturer (Giảng viên)</SelectItem>
             </SelectContent>
           </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="bank-number">Bank Number</FieldLabel>
+          <Input id="bank-number" type="text" placeholder="0123456789" value={bankNumber} onChange={(e) => setbankNumber(e.target.value)} />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="bank-name">Bank Name</FieldLabel>
+          <Input id="bank-name" type="text" placeholder="Nguyen Van A" value={bankName} onChange={(e) => setbankName(e.target.value)} />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
