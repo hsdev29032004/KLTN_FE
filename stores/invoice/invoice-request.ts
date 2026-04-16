@@ -23,6 +23,7 @@ export class InvoiceRequest extends Base {
     if (params?.toDate) searchParams.set('toDate', params.toDate);
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy);
     if (params?.order) searchParams.set('order', params.order);
+    if (params?.status) searchParams.set('status', params.status);
     const query = searchParams.toString();
     return this.request(`/api/invoice/details${query ? `?${query}` : ''}`, {
       method: 'GET',

@@ -75,6 +75,7 @@ export function TransactionTable({ role }: TransactionTableProps) {
     limit: 10,
     sortBy: 'createdAt',
     order: 'desc',
+    status: 'paid',
   });
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();

@@ -51,6 +51,7 @@ export interface InvoiceDetailParams {
   limit?: number;
   sortBy?: 'createdAt' | 'price';
   order?: 'asc' | 'desc';
+  status?: string;
 }
 
 export interface InvoiceDetailResponse {
