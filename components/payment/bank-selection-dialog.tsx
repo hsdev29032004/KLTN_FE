@@ -7,41 +7,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Bank } from "@/types/bank.type";
-import { formatMoney } from "@/helpers/format.helper";
 import { Loader2 } from "lucide-react";
 
 interface BankSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDeposit: (amount: number) => void;
   banks: Bank[];
   loading?: boolean;
   depositing?: boolean;
+  /** Called when a bank is selected in selection-only mode */
+  onSelectBank?: (bankId: string) => void;
+  /** If true, dialog works as "select bank only" (no amount input) */
+  selectOnly?: boolean;
 }
 
-const QUICK_AMOUNTS = [50000, 100000, 200000, 500000, 1000000, 2000000];
 
 export function BankSelectionDialog({
   open,
   onOpenChange,
-  onDeposit,
   banks,
   loading,
   depositing,
+  onSelectBank,
+  selectOnly = false,
 }: BankSelectionDialogProps) {
-  const [amount, setAmount] = useState<string>("");
-
-  const parsedAmount = parseInt(amount) || 0;
-  const isValidAmount = parsedAmount >= 10000;
-
-  const handleDeposit = () => {
-    if (isValidAmount && !depositing) {
-      onDeposit(parsedAmount);
-    }
-  };
+  const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
 
   return (
     <Dialog
@@ -49,7 +41,6 @@ export function BankSelectionDialog({
       onOpenChange={(v) => {
         if (!depositing) {
           onOpenChange(v);
-          if (!v) setAmount("");
         }
       }}
     >
@@ -60,45 +51,15 @@ export function BankSelectionDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Amount Input */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Số tiền nạp (VNĐ)</label>
-          <Input
-            type="number"
-            min={10000}
-            placeholder="Nhập số tiền (tối thiểu 10,000đ)"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            disabled={depositing}
-          />
-          {amount && !isValidAmount && (
-            <p className="text-xs text-destructive">
-              Số tiền tối thiểu là 10,000đ
-            </p>
-          )}
-
-          {/* Quick Amount Buttons */}
-          <div className="grid grid-cols-3 gap-2">
-            {QUICK_AMOUNTS.map((qa) => (
-              <Button
-                key={qa}
-                variant={parsedAmount === qa ? "default" : "outline"}
-                size="sm"
-                className="text-xs"
-                onClick={() => setAmount(qa.toString())}
-                disabled={depositing}
-              >
-                {formatMoney(qa)}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Bank List (display only) */}
+        {/* Bank List (display only / selection) */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground">
-            Thanh toán qua cổng VNPay — Hỗ trợ các ngân hàng:
-          </label>
+          {selectOnly ? (
+            <label className="text-sm font-medium text-muted-foreground">Chọn ngân hàng để thanh toán</label>
+          ) : (
+            <label className="text-sm font-medium text-muted-foreground">
+              Thanh toán qua cổng VNPay — Hỗ trợ các ngân hàng:
+            </label>
+          )}
           <div className="grid grid-cols-1 gap-2 max-h-[30vh] overflow-y-auto">
             {loading ? (
               <div className="text-center py-4 text-muted-foreground text-xs sm:text-sm">
@@ -112,7 +73,8 @@ export function BankSelectionDialog({
               banks.map((bank) => (
                 <div
                   key={bank.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                  onClick={() => selectOnly && !depositing && setSelectedBankId(bank.id)}
+                  className={`flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 cursor-pointer`}
                 >
                   <span className="text-xl sm:text-2xl">🏦</span>
                   <div className="flex-1 text-left min-w-0">
@@ -123,29 +85,50 @@ export function BankSelectionDialog({
                       {bank.bankNumber} — {bank.recipient}
                     </p>
                   </div>
+                  {selectOnly && selectedBankId === bank.id && (
+                    <div className="text-sm text-primary font-semibold">Đã chọn</div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Deposit Button */}
-        <Button
-          className="w-full"
-          disabled={!isValidAmount || depositing}
-          onClick={handleDeposit}
-        >
-          {depositing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Đang xử lý...
-            </>
-          ) : (
-            <>
-              Nạp {isValidAmount ? formatMoney(parsedAmount) : "tiền"} qua VNPay
-            </>
-          )}
-        </Button>
+        {/* Action Button */}
+        {selectOnly ? (
+          <Button
+            className="w-full"
+            disabled={!selectedBankId || depositing}
+            onClick={() => {
+              if (selectedBankId) {
+                onSelectBank?.(selectedBankId);
+              }
+            }}
+          >
+            {depositing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>Chọn ngân hàng và tiếp tục</>
+            )}
+          </Button>
+        ) : (
+          <Button
+            className="w-full"
+            disabled={depositing}
+          >
+            {depositing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>Nạp tiền qua VNPay</>
+            )}
+          </Button>
+        )}
       </DialogContent>
     </Dialog>
   );

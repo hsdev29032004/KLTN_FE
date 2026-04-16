@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { useCartStore } from '@/stores/cart/cart-store';
 import { useAuthStore } from '@/stores/auth/auth-store';
 import { useCourseStore } from '@/stores/course/course-store';
+import { BankSelectionDialog } from '@/components/payment/bank-selection-dialog';
+import { useBankStore } from '@/stores/bank/bank-store';
 import { formatMoney } from '@/helpers/format.helper';
 import type { CartItem } from '@/types/cart.type';
 import type { CourseListItem } from '@/types/course.type';
@@ -238,11 +240,34 @@ export default function CartPage() {
       setCheckoutStep('login');
       return;
     }
+    // Open bank selection dialog before calling purchase API
+    setBankDialogOpen(true);
+  };
 
-    const res: any = await cartStore.purchaseCourses(selectedIds);
-    const paymentUrl = res?.paymentUrl;
-    if (paymentUrl) {
-      window.location.href = paymentUrl;
+  // Bank selection for cart checkout
+  const [bankDialogOpen, setBankDialogOpen] = useState(false);
+  const bankStore = useBankStore();
+  const banks = bankStore.list ?? [];
+  const banksLoading = bankStore.loading;
+
+  // Fetch banks when dialog opens (lazy)
+  useEffect(() => {
+    if (bankDialogOpen && (!banks || banks.length === 0)) {
+      bankStore.fetchBanks();
+    }
+  }, [bankDialogOpen]);
+
+  const handleBankSelected = async (bankId: string) => {
+    setBankDialogOpen(false);
+    try {
+      const selectedIds = Array.from(checkedIds);
+      const res: any = await cartStore.purchaseCourses(selectedIds);
+      const paymentUrl = res?.paymentUrl;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+      }
+    } catch (e) {
+      console.error('purchase error', e);
     }
   };
 
@@ -425,6 +450,16 @@ export default function CartPage() {
           </div>
         )}
       </div>
+      <BankSelectionDialog
+        open={bankDialogOpen}
+        onOpenChange={(v) => setBankDialogOpen(v)}
+        banks={banks}
+        loading={banksLoading}
+        selectOnly
+        onSelectBank={handleBankSelected}
+        depositing={cartStore.purchasing}
+      />
     </div>
   );
 }
+

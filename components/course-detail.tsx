@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Star, Users, BookOpen, Clock, ShoppingCart, FileQuestion } from 'lucide-react';
@@ -12,6 +12,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 import { Course, ICourseReview, Lesson, CourseExam } from '@/types/course.type';
+import { Bank } from '@/types/bank.type';
+import { BankSelectionDialog } from '@/components/payment/bank-selection-dialog';
+import { useBankStore } from '@/stores/bank/bank-store';
 import { usePurchaseStore } from '@/stores/purchase/purchase-store';
 import { useCourseStore } from '@/stores/course/course-store';
 import { useCartStore } from '@/stores/cart/cart-store';
@@ -104,6 +107,16 @@ export function CourseDetail({
     title: '',
   });
 
+  // Bank selection dialog state
+  const [bankDialogOpen, setBankDialogOpen] = useState(false);
+  const bankStore = useBankStore();
+  const banks = bankStore.list ?? [];
+  const banksLoading = bankStore.loading;
+
+  useEffect(() => {
+    bankStore.fetchBanks();
+  }, []);
+
   const contentItems = parseContentItems((course as any).content);
   const avgRating = calcAvgRating(reviews);
   const courseLessons: any[] = (course as any).lessons ?? [];
@@ -120,8 +133,15 @@ export function CourseDetail({
       router.push('/login');
       return;
     }
+    // Open bank selection first (simulate hardflow VNPay bank selection)
+    setBankDialogOpen(true);
+  };
+
+  const handleBankSelected = async (bankId: string) => {
+    setBankDialogOpen(false);
     setBuyingNow(true);
     try {
+      // Simulate selection -> then call existing purchase API
       const res: any = await cartStore.purchaseCourses([course.id]);
       const paymentUrl = res?.paymentUrl;
       if (paymentUrl) {
@@ -341,6 +361,15 @@ export function CourseDetail({
       </section>
 
       {/* ── Media modal (single instance) ── */}
+      <BankSelectionDialog
+        open={bankDialogOpen}
+        onOpenChange={(v) => setBankDialogOpen(v)}
+        banks={banks}
+        loading={banksLoading}
+        selectOnly
+        onSelectBank={handleBankSelected}
+        depositing={buyingNow}
+      />
       <MediaModal
         open={media.open}
         onOpenChange={closeMedia}
