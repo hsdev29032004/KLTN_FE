@@ -10,6 +10,7 @@ import { InvoiceRequest } from './invoice/invoice-request';
 import { PaymentRequest } from './payment/payment-request';
 import { ExamRequest } from './exam/exam-request';
 import { UserRequest } from './user/user-request';
+import { RoleRequest } from './role/role-request';
 import { CartRequest } from "./cart/cart-request";
 
 function applyMixins(derivedCtor: any, baseCtors: any[]) {
@@ -62,6 +63,7 @@ interface SDK
     PaymentRequest,
     ExamRequest,
     UserRequest,
+    RoleRequest,
     CartRequest {}
 applyMixins(SDK, [
   AuthRequest,
@@ -75,6 +77,7 @@ applyMixins(SDK, [
   PaymentRequest,
   ExamRequest,
   UserRequest,
+  RoleRequest,
   CartRequest,
 ]);
 

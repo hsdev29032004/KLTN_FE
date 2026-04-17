@@ -62,6 +62,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         icon: CreditCard,
       },
       {
+        title: 'Phân quyền',
+        url: '/admin/managements/roles',
+        icon: TicketCheck,
+      },
+      {
         title: 'Quản lý hệ thống',
         url: '/admin/settings',
         icon: Settings,
