@@ -62,24 +62,32 @@ export class CourseRequest extends Base {
 
   // ── Course CRUD ──────────────────────────────────────────────────────────
 
-  async createCourse(data: {
+  async createCourse(data: FormData | {
     name: string;
     price: number;
     thumbnail: string;
     content: string;
     description: string;
   }): Promise<{ data: any }> {
-    return this.request('/api/course', {
+    const options: any = {
       method: 'POST',
       data,
-    });
+    };
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      options.headers = { 'Content-Type': 'multipart/form-data' };
+    }
+    return this.request('/api/course', options);
   }
 
-  async updateCourse(courseId: string, data: Record<string, any>): Promise<{ data: any }> {
-    return this.request(`/api/course/${courseId}`, {
+  async updateCourse(courseId: string, data: FormData | Record<string, any>): Promise<{ data: any }> {
+    const options: any = {
       method: 'PUT',
       data,
-    });
+    };
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      options.headers = { 'Content-Type': 'multipart/form-data' };
+    }
+    return this.request(`/api/course/${courseId}`, options);
   }
 
   async deleteCourse(courseId: string): Promise<any> {
@@ -140,18 +148,26 @@ export class CourseRequest extends Base {
 
   // ── Material CRUD ────────────────────────────────────────────────────────
 
-  async createMaterial(lessonId: string, data: { name: string; url: string; type?: string }): Promise<{ data: Material }> {
-    return this.request(`/api/course/lesson/${lessonId}/material`, {
+  async createMaterial(lessonId: string, data: FormData | { name: string; url: string; type?: string }): Promise<{ data: Material }> {
+    const options: any = {
       method: 'POST',
       data,
-    });
+    };
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      options.headers = { 'Content-Type': 'multipart/form-data' };
+    }
+    return this.request(`/api/course/lesson/${lessonId}/material`, options);
   }
 
-  async updateMaterial(materialId: string, data: { name?: string; url?: string; type?: string }): Promise<{ data: Material }> {
-    return this.request(`/api/course/material/${materialId}`, {
+  async updateMaterial(materialId: string, data: FormData | { name?: string; url?: string; type?: string }): Promise<{ data: Material }> {
+    const options: any = {
       method: 'PUT',
       data,
-    });
+    };
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      options.headers = { 'Content-Type': 'multipart/form-data' };
+    }
+    return this.request(`/api/course/material/${materialId}`, options);
   }
 
   async deleteMaterial(materialId: string): Promise<any> {

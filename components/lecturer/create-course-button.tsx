@@ -35,6 +35,7 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [thumbnail, setThumbnail] = useState('');
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [contentParts, setContentParts] = useState<string[]>(['']);
   const descRef = useRef<RichTextEditorRef>(null);
   const [loading, setLoading] = useState(false);
@@ -46,8 +47,8 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
     setContentParts((prev) => prev.map((v, i) => (i === idx ? value : v)));
 
   const handleSubmit = async () => {
-    if (!name.trim() || !price.trim() || !thumbnail.trim()) {
-      toast.error('Vui lòng điền tên, giá và thumbnail');
+    if (!name.trim() || !price.trim()) {
+      toast.error('Vui lòng điền tên và giá');
       return;
     }
     setLoading(true);
@@ -55,13 +56,24 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
       const content = contentParts.filter((p) => p.trim()).join('|');
       const description = descRef.current?.getContent() ?? '';
       const sdk = SDK.getInstance();
-      const res = await sdk.createCourse({
-        name: name.trim(),
-        price: Number(price),
-        thumbnail: thumbnail.trim(),
-        content,
-        description,
-      });
+      let res;
+      if (thumbnailFile) {
+        const form = new FormData();
+        form.append('thumbnail', thumbnailFile);
+        form.append('name', name.trim());
+        form.append('price', String(Number(price)));
+        form.append('content', content);
+        form.append('description', description);
+        res = await (sdk as any).createCourse(form);
+      } else {
+        res = await sdk.createCourse({
+          name: name.trim(),
+          price: Number(price),
+          thumbnail: thumbnail.trim(),
+          content,
+          description,
+        });
+      }
       const data = (res as any).data || res;
       toast.success('Tạo khóa học thành công');
       onClose();
@@ -92,8 +104,25 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
               <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
             </div>
             <div className="grid gap-1.5">
-              <Label>Thumbnail URL</Label>
-              <Input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} placeholder="https://..." />
+              <Label>Thumbnail</Label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm cursor-pointer file:border-0 file:bg-transparent file:text-sm file:font-medium"
+              />
+              <div className="flex gap-2 items-center">
+                <Input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} placeholder="Hoặc dán URL ảnh (tùy chọn)" />
+                {(thumbnailFile || thumbnail) && (
+                  <div className="ml-2">
+                    <img
+                      src={thumbnailFile ? URL.createObjectURL(thumbnailFile) : thumbnail}
+                      alt="preview"
+                      className="h-16 w-28 object-cover rounded-md border"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

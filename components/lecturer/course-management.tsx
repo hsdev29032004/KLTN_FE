@@ -212,6 +212,7 @@ function EditCourseDialog({
   const [name, setName] = useState(course.name);
   const [price, setPrice] = useState(String(course.price));
   const [thumbnail, setThumbnail] = useState(course.thumbnail);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [contentParts, setContentParts] = useState<string[]>(
     course.content ? course.content.split('|') : [''],
   );
@@ -234,13 +235,24 @@ function EditCourseDialog({
       const content = contentParts.filter((p) => p.trim()).join('|');
       const description = descRef.current?.getContent() ?? '';
       const sdk = SDK.getInstance();
-      const res = await sdk.updateCourse(course.id, {
-        name: name.trim(),
-        price: Number(price),
-        thumbnail: thumbnail.trim(),
-        content,
-        description,
-      });
+      let res;
+      if (thumbnailFile) {
+        const form = new FormData();
+        form.append('thumbnail', thumbnailFile);
+        form.append('name', name.trim());
+        form.append('price', String(Number(price)));
+        form.append('content', content);
+        form.append('description', description);
+        res = await (sdk as any).updateCourse(course.id, form);
+      } else {
+        res = await sdk.updateCourse(course.id, {
+          name: name.trim(),
+          price: Number(price),
+          thumbnail: thumbnail.trim(),
+          content,
+          description,
+        });
+      }
       const data = (res as any).data || res;
       toast.success('Đã cập nhật khóa học');
       onSaved(data);
@@ -274,11 +286,24 @@ function EditCourseDialog({
               />
             </div>
             <div className="grid gap-1.5">
-              <Label>Thumbnail URL</Label>
-              <Input
-                value={thumbnail}
-                onChange={(e) => setThumbnail(e.target.value)}
+              <Label>Thumbnail</Label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm cursor-pointer file:border-0 file:bg-transparent file:text-sm file:font-medium"
               />
+              <div className="flex gap-2 items-center">
+                {(thumbnailFile || thumbnail) && (
+                  <div className="ml-2">
+                    <img
+                      src={thumbnailFile ? URL.createObjectURL(thumbnailFile) : thumbnail}
+                      alt="preview"
+                      className="h-16 w-28 object-cover rounded-md border"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="grid gap-1.5">
@@ -487,7 +512,7 @@ function MaterialDialog({
     isPreview?: boolean;
   };
   onSave: (
-    data: { name: string; url: string; type: string; isPreview: boolean },
+    data: FormData | { name: string; url: string; type: string; isPreview: boolean },
     id?: string,
   ) => Promise<void>;
 }) {
@@ -533,13 +558,17 @@ function MaterialDialog({
         toast.error('Vui lòng chọn file');
         return;
       }
+      // send file to backend via FormData (backend will upload to cloud)
+      const form = new FormData();
+      form.append('file', file);
+      form.append('name', name.trim());
+      form.append('type', type);
+      form.append('isPreview', String(isPreview));
       setUploading(true);
       try {
-        if (type === 'video') {
-          finalUrl = await uploadVideoToCloud(file);
-        } else {
-          finalUrl = await uploadFileToBackend(file);
-        }
+        await onSave(form, initial?.id);
+        onClose();
+        return;
       } catch (e: any) {
         toast.error(e?.message ?? 'Upload thất bại');
         return;
@@ -547,13 +576,9 @@ function MaterialDialog({
         setUploading(false);
       }
     }
-
     setLoading(true);
     try {
-      await onSave(
-        { name: name.trim(), url: finalUrl, type, isPreview },
-        initial?.id,
-      );
+      await onSave({ name: name.trim(), url: finalUrl, type, isPreview }, initial?.id);
       onClose();
     } catch {
       /* handled by interceptor */
@@ -684,9 +709,15 @@ function MaterialItem({
   return (
     <div className="flex items-center justify-between rounded-md px-3 py-2 bg-muted/40">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-base">
-          {MATERIAL_ICON[material.type] ?? '📄'}
-        </span>
+        {material.type === 'img' && material.url ? (
+          <img
+            src={material.url}
+            alt={material.name}
+            className="h-10 w-16 object-cover rounded-md shrink-0"
+          />
+        ) : (
+          <span className="text-base">{MATERIAL_ICON[material.type] ?? '📄'}</span>
+        )}
         <span
           className={`text-sm truncate ${isOutdated ? 'line-through text-muted-foreground' : ''}`}
         >
@@ -1050,31 +1081,49 @@ export function CourseManagement({
   // ── Material actions ─────────────────────────────────────────────────────
 
   const handleSaveMaterial = async (
-    data: { name: string; url: string; type?: string },
+    data: FormData | { name: string; url: string; type?: string },
     id?: string,
   ) => {
+    // Support FormData (file upload) or object payload
     if (id) {
-      const res = await sdk.updateMaterial(id, data);
-      const updated = (res as any).data || res;
-      // Refresh the whole course to handle the outdated + new record scenario
-      const courseRes = await sdk.getCourseBySlugOrId(course.id);
-      const courseData = (courseRes as any).data || courseRes;
-      setCourse((prev) => ({
-        ...prev,
-        lessons: courseData.lessons ?? prev.lessons,
-      }));
+      if (typeof FormData !== 'undefined' && (data as any) instanceof FormData) {
+        await (sdk as any).updateMaterial(id, data as FormData);
+      } else {
+        const res = await sdk.updateMaterial(id, data as any);
+        const updated = (res as any).data || res;
+        // Refresh the whole course to handle the outdated + new record scenario
+        const courseRes = await sdk.getCourseBySlugOrId(course.id);
+        const courseData = (courseRes as any).data || courseRes;
+        setCourse((prev) => ({
+          ...prev,
+          lessons: courseData.lessons ?? prev.lessons,
+        }));
+      }
       toast.success('Đã cập nhật tài liệu');
     } else if (materialDialog.lessonId) {
-      const res = await sdk.createMaterial(materialDialog.lessonId, data);
-      const created = (res as any).data || res;
-      setCourse((prev) => ({
-        ...prev,
-        lessons: prev.lessons.map((l) =>
-          l.id === materialDialog.lessonId
-            ? { ...l, materials: [...l.materials, created] }
-            : l,
-        ),
-      }));
+      if (typeof FormData !== 'undefined' && (data as any) instanceof FormData) {
+        const res = await (sdk as any).createMaterial(materialDialog.lessonId, data as FormData);
+        const created = (res as any).data || res;
+        setCourse((prev) => ({
+          ...prev,
+          lessons: prev.lessons.map((l) =>
+            l.id === materialDialog.lessonId
+              ? { ...l, materials: [...l.materials, created] }
+              : l,
+          ),
+        }));
+      } else {
+        const res = await sdk.createMaterial(materialDialog.lessonId, data as any);
+        const created = (res as any).data || res;
+        setCourse((prev) => ({
+          ...prev,
+          lessons: prev.lessons.map((l) =>
+            l.id === materialDialog.lessonId
+              ? { ...l, materials: [...l.materials, created] }
+              : l,
+          ),
+        }));
+      }
       toast.success('Đã thêm tài liệu');
     }
   };
