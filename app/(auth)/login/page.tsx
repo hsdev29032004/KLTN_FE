@@ -44,9 +44,9 @@ export default function LoginPage() {
     <form className="p-6 md:p-8" onSubmit={handleSubmit}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <h1 className="text-2xl font-bold">Chào mừng trở lại</h1>
           <p className="text-muted-foreground text-balance">
-            Login to your Acme Inc account
+            Đăng nhập vào tài khoản của bạn
           </p>
         </div>
         <Field>
@@ -62,12 +62,12 @@ export default function LoginPage() {
         </Field>
         <Field>
           <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
             <a
               href="#"
               className="ml-auto text-sm underline-offset-2 hover:underline"
             >
-              Forgot your password?
+              Quên mật khẩu?
             </a>
           </div>
           <Input
@@ -80,11 +80,11 @@ export default function LoginPage() {
         </Field>
         <Field>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </Button>
         </Field>
         <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-          Or continue with
+          Hoặc tiếp tục với
         </FieldSeparator>
         <Field className="grid grid-cols-3 gap-4">
           <Button variant="outline" type="button">
@@ -116,7 +116,7 @@ export default function LoginPage() {
           </Button>
         </Field>
         <FieldDescription className="text-center">
-          Don't have an account? <Link href="/signup">Sign up</Link>
+          Chưa có tài khoản? <Link href="/signup">Đăng ký</Link>
         </FieldDescription>
       </FieldGroup>
     </form>

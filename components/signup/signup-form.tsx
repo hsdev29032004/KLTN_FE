@@ -34,8 +34,6 @@ export function SignupForm({
   const [role, setRole] = useState<"trainee" | "lecturer" | "">("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [bankNumber, setbankNumber] = useState("")
-  const [bankName, setbankName] = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,8 +59,6 @@ export function SignupForm({
         email,
         password,
         role: role === "trainee" ? "User" : "Teacher",
-        bankNumber: bankNumber || undefined,
-        bankName: bankName || undefined,
       })
 
       toast.success("Đăng ký thành công")
@@ -78,13 +74,13 @@ export function SignupForm({
     <form className={cn("flex flex-col gap-6 py-4", className)} onSubmit={handleSubmit} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl font-bold">Tạo tài khoản của bạn</h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Fill in the form below to create your account
+            Điền mẫu dưới đây để tạo tài khoản
           </p>
         </div>
         <Field>
-          <FieldLabel htmlFor="name">Full Name</FieldLabel>
+          <FieldLabel htmlFor="name">Họ và Tên</FieldLabel>
           <Input id="name" type="text" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>
@@ -92,40 +88,32 @@ export function SignupForm({
           <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="role">Role</FieldLabel>
+          <FieldLabel htmlFor="role">Vai trò</FieldLabel>
           <Select onValueChange={(v) => setRole(v as "trainee" | "lecturer")} value={role}>
             <SelectTrigger id="role">
-              <SelectValue placeholder="Select your role" />
+              <SelectValue placeholder="Chọn vai trò" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="trainee">Trainee (Học viên)</SelectItem>
-              <SelectItem value="lecturer">Lecturer (Giảng viên)</SelectItem>
+              <SelectItem value="trainee">Học viên</SelectItem>
+              <SelectItem value="lecturer">Giảng viên</SelectItem>
             </SelectContent>
           </Select>
         </Field>
         <Field>
-          <FieldLabel htmlFor="bank-number">Bank Number</FieldLabel>
-          <Input id="bank-number" type="text" placeholder="0123456789" value={bankNumber} onChange={(e) => setbankNumber(e.target.value)} />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="bank-name">Bank Name</FieldLabel>
-          <Input id="bank-name" type="text" placeholder="Nguyen Van A" value={bankName} onChange={(e) => setbankName(e.target.value)} />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
           <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+          <FieldLabel htmlFor="confirm-password">Xác nhận mật khẩu</FieldLabel>
           <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
         </Field>
         <Field>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Đang xử lý..." : "Create Account"}
+            {loading ? "Đang xử lý..." : "Tạo tài khoản"}
           </Button>
         </Field>
         <FieldDescription className="px-6 text-center">
-          Already have an account? <Link href="/login">Sign in</Link>
+          Đã có tài khoản? <Link href="/login">Đăng nhập</Link>
         </FieldDescription>
       </FieldGroup>
     </form>
