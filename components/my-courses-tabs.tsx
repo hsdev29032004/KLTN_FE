@@ -10,15 +10,6 @@ export default function MyCoursesTabs() {
   const value = pathname.includes("/my-courses/history") ? "history" : "purchased";
 
   return (
-    <Tabs value={value}>
-      <TabsList>
-        <TabsTrigger value="purchased">
-          <Link href="/my-courses/purchased">Khóa học đã mua</Link>
-        </TabsTrigger>
-        <TabsTrigger value="history">
-          <Link href="/my-courses/history">Lịch sử mua</Link>
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+    <h1 className="text-2xl font-bold">Khóa học đã mua</h1>
   );
 }

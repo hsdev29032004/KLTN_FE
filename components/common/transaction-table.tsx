@@ -292,7 +292,7 @@ export function TransactionTable({ role }: TransactionTableProps) {
                 ) : list && list.length > 0 ? (
                   list.map((item, idx) => {
                     const rowNum = ((currentPage - 1) * (params.limit || 10)) + idx + 1;
-                    const netAmount = item.price * (1 + item.commissionRate / 100);
+                    const netAmount = item.price * (item.commissionRate / 100);
 
                     return (
                       <TableRow key={item.id}>
