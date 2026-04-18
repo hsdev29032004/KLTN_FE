@@ -133,11 +133,11 @@ export function SignupForm({
         </div>
         <Field>
           <FieldLabel htmlFor="name">Họ và Tên</FieldLabel>
-          <Input id="name" type="text" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
+          <Input id="name" type="text" placeholder="Đỗ Phúc Hưng" required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input id="email" type="email" placeholder="dophuchung@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field>
           <FieldLabel htmlFor="role">Vai trò</FieldLabel>
@@ -162,15 +162,14 @@ export function SignupForm({
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${
-                    passwordStrength?.score === 5
-                      ? "bg-green-500 w-full"
-                      : passwordStrength?.score === 4
-                        ? "bg-green-500 w-4/5"
-                        : passwordStrength?.score === 3
-                          ? "bg-yellow-500 w-3/5"
-                          : "bg-red-500 w-2/5"
-                  }`}
+                  className={`h-full transition-all ${passwordStrength?.score === 5
+                    ? "bg-green-500 w-full"
+                    : passwordStrength?.score === 4
+                      ? "bg-green-500 w-4/5"
+                      : passwordStrength?.score === 3
+                        ? "bg-yellow-500 w-3/5"
+                        : "bg-red-500 w-2/5"
+                    }`}
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2">
@@ -184,7 +183,7 @@ export function SignupForm({
           <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
         </Field>
         <Field>
-          <Button type="submit" className="w-full" disabled={loading || (password && !passwordStrength?.isValid)}>
+          <Button type="submit" className="w-full" disabled={loading || (password.length > 0 && !passwordStrength?.isValid)}>
             {loading ? "Đang xử lý..." : "Tạo tài khoản"}
           </Button>
         </Field>
