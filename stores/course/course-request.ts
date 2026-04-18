@@ -96,6 +96,12 @@ export class CourseRequest extends Base {
     });
   }
 
+  async reopenCourse(courseId: string): Promise<any> {
+    return this.request(`/api/course/${courseId}/reopen`, {
+      method: 'POST',
+    });
+  }
+
   async submitForReview(courseId: string, data: { description: string }): Promise<any> {
     return this.request(`/api/course/${courseId}/submit-review`, {
       method: 'POST',

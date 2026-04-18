@@ -122,6 +122,10 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
     label: 'Cần cập nhật',
     className: 'bg-purple-100 text-purple-700 border-purple-300',
   },
+  stopped: {
+    label: 'Ngừng kinh doanh',
+    className: 'bg-red-100 text-red-700 border-red-300',
+  },
   deleted: {
     label: 'Đã xóa',
     className: 'bg-red-100 text-red-500 border-red-300',
@@ -1005,14 +1009,24 @@ export function CourseManagement({
   const handleDeleteCourse = () => {
     setConfirmDialog({
       open: true,
-      title: 'Xóa khóa học',
-      description: `Bạn có chắc chắn muốn xóa khóa học "${course.name}"? Tất cả bài học và tài liệu sẽ bị xóa theo.`,
+      title: 'Ngừng kinh doanh',
+      description: `Bạn có chắc chắn muốn ngừng kinh doanh khóa học "${course.name}"? Khóa học sẽ vẫn giữ dữ liệu nhưng sẽ không hiển thị trên trang công khai.`,
       onConfirm: async () => {
         await sdk.deleteCourse(course.id);
-        toast.success('Đã xóa khóa học');
-        router.push('/lecturer/dashboard');
+        setCourse((prev) => ({ ...prev, status: 'stopped' }));
+        toast.success('Cập nhật trạng thái khóa học thành "Ngừng kinh doanh" thành công');
       },
     });
+  };
+
+  const handleRepublishCourse = async () => {
+    try {
+      await (sdk as any).reopenCourse(course.id);
+      setCourse((prev) => ({ ...prev, status: 'published' }));
+      toast.success('Mở bán khóa học thành công');
+    } catch (e) {
+      /* interceptor */
+    }
   };
 
   // ── Submit Review Dialog ──────────────────────────────────────────────
@@ -1176,10 +1190,16 @@ export function CourseManagement({
             <Pencil className="h-4 w-4 mr-1.5" />
             Sửa
           </Button>
-          {!['draft', 'rejected'].includes(course.status) && (
+          {course.status !== 'stopped' && !['draft', 'rejected'].includes(course.status) && (
             <Button variant="destructive" size="sm" onClick={handleDeleteCourse}>
               <Trash2 className="h-4 w-4 mr-1.5" />
               Ngừng kinh doanh
+            </Button>
+          )}
+          {course.status === 'stopped' && (
+            <Button size="sm" onClick={handleRepublishCourse}>
+              <RotateCcw className="h-4 w-4 mr-1.5" />
+              Mở bán trở lại
             </Button>
           )}
           {canSubmitReview && (
