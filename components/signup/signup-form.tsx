@@ -22,6 +22,40 @@ import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/stores/auth/auth-store"
 import { toast } from "sonner"
 
+// Password strength validation function
+function getPasswordStrength(pwd: string): { score: number; label: string; color: string; isValid: boolean } {
+  let score = 0
+  const requirements = {
+    length: pwd.length >= 8, // At least 8 characters
+    uppercase: /[A-Z]/.test(pwd), // At least one uppercase letter
+    lowercase: /[a-z]/.test(pwd), // At least one lowercase letter
+    number: /\d/.test(pwd), // At least one digit
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd), // At least one special character
+  }
+
+  if (requirements.length) score++
+  if (requirements.uppercase) score++
+  if (requirements.lowercase) score++
+  if (requirements.number) score++
+  if (requirements.special) score++
+
+  let label = "Yếu"
+  let color = "text-red-500"
+  let isValid = false
+
+  if (score >= 4) {
+    label = "Mạnh"
+    color = "text-green-500"
+    isValid = true
+  } else if (score >= 3) {
+    label = "Trung bình"
+    color = "text-yellow-500"
+    isValid = true
+  }
+
+  return { score, label, color, isValid }
+}
+
 export function SignupForm({
   className,
   ...props
@@ -35,12 +69,30 @@ export function SignupForm({
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState<ReturnType<typeof getPasswordStrength> | null>(null)
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pwd = e.target.value
+    setPassword(pwd)
+    if (pwd) {
+      setPasswordStrength(getPasswordStrength(pwd))
+    } else {
+      setPasswordStrength(null)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!role) {
       toast.error("Vui lòng chọn role", {
         description: "Vui lòng chọn vai trò.",
+      })
+      return
+    }
+
+    if (!passwordStrength?.isValid) {
+      toast.error("Mật khẩu yếu", {
+        description: "Mật khẩu phải ít nhất 8 ký tự với chữ hoa, chữ thường, số và ký tự đặc biệt.",
       })
       return
     }
@@ -101,14 +153,38 @@ export function SignupForm({
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
-          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input id="password" type="password" required value={password} onChange={handlePasswordChange} />
+          {password && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Độ mạnh mật khẩu:</p>
+                <p className={`text-sm font-semibold ${passwordStrength?.color}`}>{passwordStrength?.label}</p>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
+                <div
+                  className={`h-full transition-all ${
+                    passwordStrength?.score === 5
+                      ? "bg-green-500 w-full"
+                      : passwordStrength?.score === 4
+                        ? "bg-green-500 w-4/5"
+                        : passwordStrength?.score === 3
+                          ? "bg-yellow-500 w-3/5"
+                          : "bg-red-500 w-2/5"
+                  }`}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Mật khẩu cần: ít nhất 8 ký tự, chữ hoa, chữ thường, số và ký tự đặc biệt (!@#$%^&*)
+              </p>
+            </div>
+          )}
         </Field>
         <Field>
           <FieldLabel htmlFor="confirm-password">Xác nhận mật khẩu</FieldLabel>
           <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
         </Field>
         <Field>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || (password && !passwordStrength?.isValid)}>
             {loading ? "Đang xử lý..." : "Tạo tài khoản"}
           </Button>
         </Field>
