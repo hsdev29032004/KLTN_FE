@@ -64,7 +64,7 @@ export default function LoginPage() {
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
             <a
-              href="#"
+              href="/forgot-password"
               className="ml-auto text-sm underline-offset-2 hover:underline"
             >
               Quên mật khẩu?

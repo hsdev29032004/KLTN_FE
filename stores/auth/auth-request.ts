@@ -1,6 +1,6 @@
-import { AxiosResponse } from "axios";
-import { Base } from "../base";
-import { User, UserLoginResponse } from "@/types/user.type";
+import { AxiosResponse } from 'axios';
+import { Base } from '../base';
+import { User, UserLoginResponse } from '@/types/user.type';
 
 export class AuthRequest extends Base {
   constructor(accessToken?: string, refreshToken?: string) {
@@ -20,7 +20,12 @@ export class AuthRequest extends Base {
     });
   }
 
-  async register(data: { name: string; email: string; password: string, role: "User" | "Teacher" }): Promise<UserLoginResponse> {
+  async register(data: {
+    name: string;
+    email: string;
+    password: string;
+    role: 'User' | 'Teacher';
+  }): Promise<UserLoginResponse> {
     return this.request('/api/auth/register', {
       method: 'POST',
       data,
@@ -34,9 +39,31 @@ export class AuthRequest extends Base {
   }
 
   async refreshToken(): Promise<{ data: any; headers: any }> {
-    return this.request('/api/auth/refresh-token', {
+    return this.request(
+      '/api/auth/refresh-token',
+      {
+        method: 'POST',
+      },
+      true,
+    );
+  }
+
+  async forgotPassword(email: string): Promise<{ data: any }> {
+    return this.request('/api/auth/forgot-password', {
       method: 'POST',
-    }, true);
+      data: { email },
+    });
+  }
+
+  async resetPassword(
+    email: string,
+    code: string,
+    newPassword: string,
+  ): Promise<{ data: any }> {
+    return this.request('/api/auth/reset-password', {
+      method: 'POST',
+      data: { email, code, newPassword },
+    });
   }
 }
 
