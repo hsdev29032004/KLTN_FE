@@ -34,6 +34,8 @@ export class UserRequest extends Base {
       avatar?: string;
       introduce?: string;
       roleId?: string;
+      bankNumber?: string;
+      bankName?: string;
     },
   ): Promise<{ message: string; data: User }> {
     return this.request(`/api/user/admin/${id}`, {
@@ -67,6 +69,19 @@ export class UserRequest extends Base {
   async restoreUser(id: string): Promise<{ message: string; data: User }> {
     return this.request(`/api/user/admin/${id}/restore`, {
       method: 'POST',
+    });
+  }
+
+  async updateProfile(data: {
+    fullName?: string;
+    avatar?: string;
+    introduce?: string;
+    bankNumber?: string;
+    bankName?: string;
+  }): Promise<{ message: string; data: User }> {
+    return this.request('/api/user/profile', {
+      method: 'PATCH',
+      data,
     });
   }
 }

@@ -2,12 +2,14 @@
 
 import { useState, useRef } from "react";
 import { useAuthStore } from "@/stores/auth/auth-store";
+import { userRequest } from "@/stores/user/user-request";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RichTextEditor, type RichTextEditorRef } from "@/components/common/rich-text-editor";
+import { toast } from "sonner";
 
 export default function LecturerProfile() {
   const authStore = useAuthStore();
@@ -18,7 +20,10 @@ export default function LecturerProfile() {
     fullName: user?.fullName || "",
     email: user?.email || "",
     avatar: user?.avatar || "",
+    bankNumber: user?.bankNumber || "",
+    bankName: user?.bankName || "",
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,15 +33,32 @@ export default function LecturerProfile() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     
-    const payload = {
-      ...formData,
-      introduce: editorRef.current?.getContent() || "",
-    };
-    
-    console.log("Payload:", payload);
+    try {
+      const payload = {
+        fullName: formData.fullName,
+        avatar: formData.avatar,
+        bankNumber: formData.bankNumber,
+        bankName: formData.bankName,
+        introduce: editorRef.current?.getContent() || "",
+      };
+      
+      const response = await userRequest.updateProfile(payload);
+      
+      if (response.data) {
+        toast.success("Cập nhật thông tin thành công");
+      }
+    } catch (error: any) {
+      toast.error("Lỗi khi cập nhật", {
+        description: error?.response?.data?.message || "Vui lòng thử lại sau",
+      });
+      console.error("Error:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!user) {
@@ -121,6 +143,45 @@ export default function LecturerProfile() {
               />
             </div>
 
+            {/* Bank Payment Information */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">Sửa ngân hàng thanh toán lương</h3>
+              
+              <div className="space-y-4">
+                {/* Bank Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="bankNumber">
+                    Số tài khoản ngân hàng <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="bankNumber"
+                    name="bankNumber"
+                    type="text"
+                    placeholder="Nhập số tài khoản"
+                    value={formData.bankNumber}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                {/* Bank Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="bankName">
+                    Tên ngân hàng <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="bankName"
+                    name="bankName"
+                    type="text"
+                    placeholder="Nhập tên ngân hàng (VD: Vietcombank, Techcombank...)"
+                    value={formData.bankName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <div className="flex justify-end gap-4">
               <Button
@@ -131,14 +192,16 @@ export default function LecturerProfile() {
                     fullName: user?.fullName || "",
                     email: user?.email || "",
                     avatar: user?.avatar || "",
+                    bankNumber: user?.bankNumber || "",
+                    bankName: user?.bankName || "",
                   });
                   editorRef.current?.setContent(user?.introduce || "");
                 }}
               >
                 Hủy
               </Button>
-              <Button type="submit">
-                Lưu thay đổi
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
               </Button>
             </div>
           </form>

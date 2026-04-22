@@ -45,7 +45,7 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
 
   if (score >= 4) {
     label = "Mạnh"
-    color = "text-green-500"
+    color = "text-lightblue-500"
     isValid = true
   } else if (score >= 3) {
     label = "Trung bình"
@@ -84,7 +84,7 @@ export function SignupForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!role) {
-      toast.error("Vui lòng chọn role", {
+      toast.error("Bạn chưa chọn vai trò", {
         description: "Vui lòng chọn vai trò.",
       })
       return
