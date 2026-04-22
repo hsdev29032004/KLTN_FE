@@ -14,6 +14,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +45,39 @@ interface BankForm {
 
 const emptyBankForm: BankForm = { bankName: '', bankNumber: '', recipient: '' };
 
+interface VietQRBank {
+  id: number;
+  name: string;
+  code: string;
+  bin: string;
+  shortName: string;
+  logo: string;
+  transferSupported: number;
+  lookupSupported: number;
+}
+
+// ─── Hook: fetch VietQR bank list ─────────────────────────────────────────────
+
+function useVietQRBanks() {
+  const [banks, setBanks] = useState<VietQRBank[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('https://api.vietqr.io/v2/banks')
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json?.data)) {
+          setBanks(json.data);
+        }
+      })
+      .catch(() => toast.error('Không thể tải danh sách ngân hàng'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { banks, loading };
+}
+
 // ─── Bank Dialog ─────────────────────────────────────────────────────────────
 
 function BankDialog({
@@ -53,6 +93,7 @@ function BankDialog({
 }) {
   const [form, setForm] = useState<BankForm>(initial ?? emptyBankForm);
   const [loading, setLoading] = useState(false);
+  const { banks: vietQRBanks, loading: banksLoading } = useVietQRBanks();
 
   const handleChange = (field: keyof BankForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -80,14 +121,24 @@ function BankDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          <div className="grid gap-1.5">
+          <div className="grid gap-1.5 w-full">
             <Label htmlFor="bankName">Tên ngân hàng</Label>
-            <Input
-              id="bankName"
+            <Select
               value={form.bankName}
-              onChange={handleChange('bankName')}
-              placeholder="Vietcombank"
-            />
+              onValueChange={(value) => setForm((prev) => ({ ...prev, bankName: value }))}
+              disabled={banksLoading}
+            >
+              <SelectTrigger id="bankName">
+                <SelectValue placeholder={banksLoading ? 'Đang tải...' : 'Chọn ngân hàng'} />
+              </SelectTrigger>
+              <SelectContent>
+                {vietQRBanks.map((bank) => (
+                  <SelectItem key={bank.id} value={bank.shortName}>
+                    {bank.shortName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="bankNumber">Số tài khoản</Label>
