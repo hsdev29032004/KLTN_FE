@@ -30,6 +30,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/stores/auth/auth-store"
+import { useCartStore } from "@/stores/cart/cart-store"
 
 export function NavUser({
   user,
@@ -42,6 +44,18 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const authStore = useAuthStore()
+  const cartStore = useCartStore()
+
+  const handleLogout = async () => {
+    try {
+      await authStore.logout();
+      cartStore.initLocalCart();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -104,7 +118,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/login")}>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

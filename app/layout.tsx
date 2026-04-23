@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { User } from "@/types/user.type";
 import { useRedirectServer } from "@/hooks/use-redirect-server";
 import { getRedirectPath } from "@/helpers/misc.helper";
+import { ClientRouteGuard } from "@/components/client-role-guard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider initialUser={user}>
+          <ClientRouteGuard />
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
