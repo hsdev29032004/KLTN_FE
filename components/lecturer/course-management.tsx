@@ -527,6 +527,8 @@ function MaterialDialog({
   );
   const [file, setFile] = useState<File | null>(null);
   const [isPreview, setIsPreview] = useState(initial?.isPreview ?? false);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const courseStore = useCourseStore();
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -536,6 +538,7 @@ function MaterialDialog({
     setFile(null);
     setUrl('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setPreviewUrl('');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -543,6 +546,35 @@ function MaterialDialog({
     setFile(f);
     if (f && !name.trim()) setName(f.name);
   };
+
+  // Update preview URL when file or url/type changes
+  useEffect(() => {
+    if (file) {
+      const obj = URL.createObjectURL(file);
+      setPreviewUrl(obj);
+      return () => URL.revokeObjectURL(obj);
+    }
+    if (type === 'link' && url) {
+      setPreviewUrl(url);
+      return;
+    }
+    // If editing an existing material that has an id, try fetching the accessible URL
+    if (initial?.id && !file && (type === 'img' || type === 'video' || type === 'pdf' || type === 'file')) {
+      (async () => {
+        try {
+          const res: any = await courseStore.fetchMaterialUrl(initial.id);
+          const payload = res?.payload ?? res;
+          const u = payload?.url ?? payload;
+          setPreviewUrl(u ?? initial?.url ?? '');
+          if (!url) setUrl(u ?? initial?.url ?? '');
+        } catch (e) {
+          setPreviewUrl(initial?.url ?? '');
+        }
+      })();
+      return;
+    }
+    setPreviewUrl(initial?.url ?? '');
+  }, [file, url, type, initial?.url]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -558,27 +590,42 @@ function MaterialDialog({
         return;
       }
     } else {
-      if (!file) {
-        toast.error('Vui lòng chọn file');
-        return;
+      // If user selected a new file, upload it. Otherwise, if editing an existing material, allow updating metadata without re-upload.
+      if (file) {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('name', name.trim());
+        form.append('type', type);
+        form.append('isPreview', String(isPreview));
+        setUploading(true);
+        try {
+          await onSave(form, initial?.id);
+          onClose();
+          return;
+        } catch (e: any) {
+          toast.error(e?.message ?? 'Upload thất bại');
+          return;
+        } finally {
+          setUploading(false);
+        }
       }
-      // send file to backend via FormData (backend will upload to cloud)
-      const form = new FormData();
-      form.append('file', file);
-      form.append('name', name.trim());
-      form.append('type', type);
-      form.append('isPreview', String(isPreview));
-      setUploading(true);
-      try {
-        await onSave(form, initial?.id);
-        onClose();
-        return;
-      } catch (e: any) {
-        toast.error(e?.message ?? 'Upload thất bại');
-        return;
-      } finally {
-        setUploading(false);
+      // no file selected
+      if (initial?.id) {
+        // use existing previewUrl or initial.url as the final URL when updating
+        const existingUrl = previewUrl || initial?.url || '';
+        setLoading(true);
+        try {
+          await onSave({ name: name.trim(), url: existingUrl, type, isPreview }, initial?.id);
+          onClose();
+          return;
+        } catch {
+          /* handled by interceptor */
+        } finally {
+          setLoading(false);
+        }
       }
+      toast.error('Vui lòng chọn file');
+      return;
     }
     setLoading(true);
     try {
@@ -665,6 +712,47 @@ function MaterialDialog({
                   Đang tải lên server, vui lòng chờ...
                 </p>
               )}
+
+              {previewUrl && (
+                <div className="mt-2">
+                  {type === 'img' ? (
+                    <img
+                      src={previewUrl}
+                      alt={name}
+                      className="max-h-40 w-full object-contain rounded-md border"
+                    />
+                  ) : type === 'video' ? (
+                    <video
+                      controls
+                      src={previewUrl}
+                      className="max-h-48 w-full rounded-md border"
+                    />
+                  ) : type === 'pdf' ? (
+                    <iframe
+                      src={previewUrl}
+                      title={name}
+                      className="w-full h-64 border rounded-md"
+                    />
+                  ) : (
+                    <a href={previewUrl} target="_blank" rel="noreferrer" className="text-sm text-primary underline">
+                      Xem tài liệu
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Link preview */}
+          {type === 'link' && previewUrl && (
+            <div className="mt-2">
+              {/\.(jpg|jpeg|png|gif|webp)$/i.test(previewUrl) ? (
+                <img src={previewUrl} alt={name} className="max-h-40 w-full object-contain rounded-md border" />
+              ) : (
+                <a href={previewUrl} target="_blank" rel="noreferrer" className="text-sm text-primary underline">
+                  Xem liên kết
+                </a>
+              )}
             </div>
           )}
         </div>
@@ -739,15 +827,18 @@ function MaterialItem({
         >
           <Eye className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => onEdit(material)}
-          title="Sửa"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        {!isOutdated && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onEdit(material)}
+            title="Sửa"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+
         {isOutdated ? (
           <Button
             variant="ghost"
@@ -1161,9 +1252,16 @@ export function CourseManagement({
           ...prev,
           lessons: prev.lessons.map((l) => ({
             ...l,
-            materials: l.materials.map((m) =>
-              m.id === material.id ? { ...m, status: 'outdated' } : m,
-            ),
+            materials: l.materials
+              .map((m) => (m.id === material.id ? m : m))
+              .filter((m) => {
+                if (m.id !== material.id) return true;
+                // if the material being deleted was a draft, remove it from list
+                if (material.status === 'draft') return false;
+                // otherwise keep it but mark outdated
+                return true;
+              })
+              .map((m) => (m.id === material.id ? { ...m, status: 'outdated' } : m)),
           })),
         }));
         toast.success('Đã xóa tài liệu');
@@ -1431,6 +1529,7 @@ export function CourseManagement({
                 name: materialDialog.material.name,
                 url: materialDialog.material.url,
                 type: materialDialog.material.type,
+                isPreview: materialDialog.material.isPreview ?? false,
               }
               : undefined
           }
