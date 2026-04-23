@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import Hls from 'hls.js';
 import {
   Eye,
   Pencil,
@@ -528,6 +529,8 @@ function MaterialDialog({
   const [file, setFile] = useState<File | null>(null);
   const [isPreview, setIsPreview] = useState(initial?.isPreview ?? false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const hlsRef = useRef<Hls | null>(null);
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
   const courseStore = useCourseStore();
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -575,6 +578,52 @@ function MaterialDialog({
     }
     setPreviewUrl(initial?.url ?? '');
   }, [file, url, type, initial?.url]);
+
+  const getVideoSource = (u: string) => {
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u) || u.startsWith('/')) return u;
+    return `${CLOUD_BASE}/api/videos/${u}/index.m3u8`;
+  };
+
+  const initHls = useCallback((video: HTMLVideoElement | null, source: string) => {
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    if (!video || !source) return;
+    videoElRef.current = video;
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        xhrSetup(xhr) {
+          xhr.withCredentials = true;
+          xhr.setRequestHeader('x-url', source);
+        },
+      });
+      hlsRef.current = hls;
+      hls.loadSource(source);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        console.error('HLS error:', data);
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = source;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      if (videoElRef.current) {
+        videoElRef.current.pause();
+        videoElRef.current.removeAttribute('src');
+        videoElRef.current.load();
+        videoElRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -723,8 +772,13 @@ function MaterialDialog({
                     />
                   ) : type === 'video' ? (
                     <video
+                      ref={(node) => {
+                        if (node) {
+                          const source = getVideoSource(previewUrl);
+                          initHls(node, source);
+                        }
+                      }}
                       controls
-                      src={previewUrl}
                       className="max-h-48 w-full rounded-md border"
                     />
                   ) : type === 'pdf' ? (
@@ -801,15 +855,8 @@ function MaterialItem({
   return (
     <div className="flex items-center justify-between rounded-md px-3 py-2 bg-muted/40">
       <div className="flex items-center gap-2 min-w-0">
-        {material.type === 'img' && material.url ? (
-          <img
-            src={material.url}
-            alt={material.name}
-            className="h-10 w-16 object-cover rounded-md shrink-0"
-          />
-        ) : (
-          <span className="text-base">{MATERIAL_ICON[material.type] ?? '📄'}</span>
-        )}
+        <span className="text-base">{MATERIAL_ICON[material.type] ?? '📄'}</span>
+
         <span
           className={`text-sm truncate ${isOutdated ? 'line-through text-muted-foreground' : ''}`}
         >
@@ -1191,40 +1238,99 @@ export function CourseManagement({
   ) => {
     // Support FormData (file upload) or object payload
     if (id) {
+      // find lesson containing this material
+      const lesson = course.lessons.find((ls) => ls.materials.some((m) => m.id === id));
+      const existing = lesson?.materials.find((m) => m.id === id);
+      // If editing a draft, update in-place
+      if (existing?.status === 'draft') {
+        if (typeof FormData !== 'undefined' && (data as any) instanceof FormData) {
+          await (sdk as any).updateMaterial(id, data as FormData);
+        } else {
+          const res = await sdk.updateMaterial(id, data as any);
+          const updated = (res as any).data || res;
+          // refresh lessons from backend to get canonical data
+          const courseRes = await sdk.getCourseBySlugOrId(course.id);
+          const courseData = (courseRes as any).data || courseRes;
+          setCourse((prev) => ({
+            ...prev,
+            lessons: courseData.lessons ?? prev.lessons,
+          }));
+        }
+        toast.success('Đã cập nhật tài liệu');
+        return;
+      }
+
+      // Otherwise (editing published/non-draft): create a NEW material as draft, keep old one but mark outdated
+      if (!lesson) {
+        toast.error('Không tìm thấy bài học chứa tài liệu');
+        return;
+      }
+      // create the new material on same lesson
       if (typeof FormData !== 'undefined' && (data as any) instanceof FormData) {
-        await (sdk as any).updateMaterial(id, data as FormData);
-      } else {
-        const res = await sdk.updateMaterial(id, data as any);
-        const updated = (res as any).data || res;
-        // Refresh the whole course to handle the outdated + new record scenario
-        const courseRes = await sdk.getCourseBySlugOrId(course.id);
-        const courseData = (courseRes as any).data || courseRes;
+        const res = await (sdk as any).createMaterial(lesson.id, data as FormData);
+        const created = (res as any).data || res;
+        const createdToAdd = created.status === 'draft' ? { ...created, url: undefined } : created;
+        // update state: add created, mark old as outdated
         setCourse((prev) => ({
           ...prev,
-          lessons: courseData.lessons ?? prev.lessons,
+          lessons: prev.lessons.map((l) =>
+            l.id === lesson.id
+              ? {
+                ...l,
+                materials: l.materials.map((m) => (m.id === id ? { ...m, status: 'outdated' } : m)).concat([createdToAdd]),
+              }
+              : l,
+          ),
+        }));
+      } else {
+        const res = await sdk.createMaterial(lesson.id, data as any);
+        const created = (res as any).data || res;
+        const createdToAdd = created.status === 'draft' ? { ...created, url: undefined } : created;
+        setCourse((prev) => ({
+          ...prev,
+          lessons: prev.lessons.map((l) =>
+            l.id === lesson.id
+              ? {
+                ...l,
+                materials: l.materials.map((m) => (m.id === id ? { ...m, status: 'outdated' } : m)).concat([createdToAdd]),
+              }
+              : l,
+          ),
         }));
       }
-      toast.success('Đã cập nhật tài liệu');
-    } else if (materialDialog.lessonId) {
+      // mark old material outdated in backend
+      try {
+        await sdk.deleteMaterial(id);
+      } catch {
+        // ignore
+      }
+      toast.success('Đã tạo phiên bản mới của tài liệu (draft)');
+      return;
+    }
+
+    // create new material (no id provided)
+    if (materialDialog.lessonId) {
       if (typeof FormData !== 'undefined' && (data as any) instanceof FormData) {
         const res = await (sdk as any).createMaterial(materialDialog.lessonId, data as FormData);
         const created = (res as any).data || res;
+        const createdToAdd = created.status === 'draft' ? { ...created, url: undefined } : created;
         setCourse((prev) => ({
           ...prev,
           lessons: prev.lessons.map((l) =>
             l.id === materialDialog.lessonId
-              ? { ...l, materials: [...l.materials, created] }
+              ? { ...l, materials: [...l.materials, createdToAdd] }
               : l,
           ),
         }));
       } else {
         const res = await sdk.createMaterial(materialDialog.lessonId, data as any);
         const created = (res as any).data || res;
+        const createdToAdd = created.status === 'draft' ? { ...created, url: undefined } : created;
         setCourse((prev) => ({
           ...prev,
           lessons: prev.lessons.map((l) =>
             l.id === materialDialog.lessonId
-              ? { ...l, materials: [...l.materials, created] }
+              ? { ...l, materials: [...l.materials, createdToAdd] }
               : l,
           ),
         }));
