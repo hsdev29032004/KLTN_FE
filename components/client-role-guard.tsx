@@ -14,16 +14,18 @@ function shouldRedirectClient(user: User | null, currentPath: string): boolean {
     return !isPublicRoute(currentPath);
   }
 
-  if (currentPath === '/' && user.role.name !== 'User') return true;
+  const roleName = user.role?.name;
+
+  if (currentPath === '/' && roleName !== 'User') return true;
 
   if (
-    user.role.name === 'User' &&
+    roleName === 'User' &&
     (currentPath.startsWith('/lecturer') || currentPath.startsWith('/admin'))
   ) return true;
 
-  if (user.role.name === 'Teacher' && !currentPath.startsWith('/lecturer')) return true;
+  if (roleName === 'Teacher' && !currentPath.startsWith('/lecturer')) return true;
 
-  if (user.role.name === 'Admin' && !currentPath.startsWith('/admin')) return true;
+  if (roleName === 'Admin' && !currentPath.startsWith('/admin')) return true;
 
   return false;
 }

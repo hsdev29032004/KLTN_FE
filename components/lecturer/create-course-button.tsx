@@ -34,6 +34,7 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
   const router = useRouter();
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [commissionRate, setCommissionRate] = useState('');
   const [thumbnail, setThumbnail] = useState('');
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [contentParts, setContentParts] = useState<string[]>(['']);
@@ -51,6 +52,15 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
       toast.error('Vui lòng điền tên và giá');
       return;
     }
+    if (commissionRate === '') {
+      toast.error('Vui lòng nhập tỷ lệ hoa hồng (commissionRate)');
+      return;
+    }
+    const crNum = Number(commissionRate);
+    if (Number.isNaN(crNum) || crNum < 0 || crNum > 100) {
+      toast.error('Tỷ lệ hoa hồng phải là số trong khoảng 0–100');
+      return;
+    }
     setLoading(true);
     try {
       const content = contentParts.filter((p) => p.trim()).join('|');
@@ -62,6 +72,7 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
         form.append('thumbnail', thumbnailFile);
         form.append('name', name.trim());
         form.append('price', String(Number(price)));
+        form.append('commissionRate', String(crNum));
         form.append('content', content);
         form.append('description', description);
         res = await (sdk as any).createCourse(form);
@@ -72,6 +83,7 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
           thumbnail: thumbnail.trim(),
           content,
           description,
+          commissionRate: crNum,
         });
       }
       const data = (res as any).data || res;
@@ -98,10 +110,14 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nhập tên khóa học" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-1.5">
               <Label>Giá (VNĐ)</Label>
               <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tỷ lệ hoa hồng (%)</Label>
+              <Input type="number" min={0} max={100} step="0.1" value={commissionRate} onChange={(e) => setCommissionRate(e.target.value)} placeholder="Ví dụ: 10 hoặc 5.5" />
             </div>
             <div className="grid gap-1.5">
               <Label>Thumbnail</Label>

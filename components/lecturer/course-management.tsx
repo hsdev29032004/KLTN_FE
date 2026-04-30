@@ -83,6 +83,7 @@ interface CourseData {
   content?: string | null;
   description?: string | null;
   price: number;
+  commissionRate?: number;
   lessons: Lesson[];
   exams?: any[];
   approvals?: CourseApproval[];
@@ -216,6 +217,7 @@ function EditCourseDialog({
 }) {
   const [name, setName] = useState(course.name);
   const [price, setPrice] = useState(String(course.price));
+  const [commissionRate, setCommissionRate] = useState(String(course.commissionRate ?? ''));
   const [thumbnail, setThumbnail] = useState(course.thumbnail);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [contentParts, setContentParts] = useState<string[]>(
@@ -246,17 +248,26 @@ function EditCourseDialog({
         form.append('thumbnail', thumbnailFile);
         form.append('name', name.trim());
         form.append('price', String(Number(price)));
+        if (commissionRate !== '') {
+          const cr = Number(commissionRate);
+          if (!Number.isNaN(cr)) form.append('commissionRate', String(cr));
+        }
         form.append('content', content);
         form.append('description', description);
         res = await (sdk as any).updateCourse(course.id, form);
       } else {
-        res = await sdk.updateCourse(course.id, {
+        const payload: any = {
           name: name.trim(),
           price: Number(price),
           thumbnail: thumbnail.trim(),
           content,
           description,
-        });
+        };
+        if (commissionRate !== '') {
+          const cr = Number(commissionRate);
+          if (!Number.isNaN(cr)) payload.commissionRate = cr;
+        }
+        res = await sdk.updateCourse(course.id, payload);
       }
       const data = (res as any).data || res;
       toast.success('Đã cập nhật khóa học');
@@ -289,6 +300,10 @@ function EditCourseDialog({
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tỷ lệ hoa hồng (%)</Label>
+              <Input type="number" min={0} max={100} step="0.1" value={commissionRate} onChange={(e) => setCommissionRate(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
               <Label>Thumbnail</Label>
@@ -1383,6 +1398,9 @@ export function CourseManagement({
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">{course.name}</h1>
             <StatusBadge status={course.status} />
+            {typeof course.commissionRate !== 'undefined' && (
+              <div className="text-sm text-muted-foreground">Hoa hồng: {course.commissionRate}%</div>
+            )}
           </div>
         </div>
         <div className="flex gap-2 shrink-0">

@@ -68,6 +68,7 @@ export class CourseRequest extends Base {
     thumbnail: string;
     content: string;
     description: string;
+    commissionRate: number;
   }): Promise<{ data: any }> {
     const options: any = {
       method: 'POST',
@@ -79,7 +80,14 @@ export class CourseRequest extends Base {
     return this.request('/api/course', options);
   }
 
-  async updateCourse(courseId: string, data: FormData | Record<string, any>): Promise<{ data: any }> {
+  async updateCourse(courseId: string, data: FormData | {
+    name?: string;
+    price?: number;
+    thumbnail?: string;
+    content?: string;
+    description?: string;
+    commissionRate?: number;
+  }): Promise<{ data: any }> {
     const options: any = {
       method: 'PUT',
       data,
