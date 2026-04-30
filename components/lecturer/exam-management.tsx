@@ -108,6 +108,9 @@ export function ExamDialog({
   const [retryAfterDays, setRetryAfterDays] = useState(String(initial?.retryAfterDays ?? 3))
   const [questionCount, setQuestionCount] = useState(String(initial?.questionCount ?? 10))
   const [duration, setDuration] = useState(String(initial?.duration ?? 30))
+  const [numEasy, setNumEasy] = useState(String(initial?.numEasy ?? 0))
+  const [numNormal, setNumNormal] = useState(String(initial?.numNormal ?? 0))
+  const [numHard, setNumHard] = useState(String(initial?.numHard ?? 0))
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
@@ -115,6 +118,7 @@ export function ExamDialog({
     if (Number(passPercent) < 1 || Number(passPercent) > 100) { toast.error('Phần trăm đạt phải từ 1-100'); return }
     if (Number(questionCount) < 1) { toast.error('Số câu hỏi phải lớn hơn 0'); return }
     if (Number(duration) < 1) { toast.error('Thời gian làm bài phải lớn hơn 0'); return }
+    if (Number(numEasy) < 0 || Number(numNormal) < 0 || Number(numHard) < 0) { toast.error('Số câu theo độ khó không được âm'); return }
 
     setLoading(true)
     try {
@@ -124,6 +128,9 @@ export function ExamDialog({
         retryAfterDays: Number(retryAfterDays),
         questionCount: Number(questionCount),
         duration: Number(duration),
+        numEasy: Number(numEasy),
+        numNormal: Number(numNormal),
+        numHard: Number(numHard),
       }, initial?.id)
       onClose()
     } finally { setLoading(false) }
@@ -152,12 +159,22 @@ export function ExamDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-1.5">
-              <Label>Số câu hỏi mỗi lần thi</Label>
-              <Input type="number" min={1} value={questionCount} onChange={(e) => setQuestionCount(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
               <Label>Chờ thi lại (ngày)</Label>
               <Input type="number" min={0} value={retryAfterDays} onChange={(e) => setRetryAfterDays(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="grid gap-1.5">
+              <Label>Số câu dễ</Label>
+              <Input type="number" min={0} value={numEasy} onChange={(e) => setNumEasy(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Số câu bình thường</Label>
+              <Input type="number" min={0} value={numNormal} onChange={(e) => setNumNormal(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Số câu khó</Label>
+              <Input type="number" min={0} value={numHard} onChange={(e) => setNumHard(e.target.value)} />
             </div>
           </div>
         </div>
@@ -189,6 +206,7 @@ function QuestionDialog({
   const [optionC, setOptionC] = useState(initial?.optionC ?? '')
   const [optionD, setOptionD] = useState(initial?.optionD ?? '')
   const [correctAnswer, setCorrectAnswer] = useState<'A' | 'B' | 'C' | 'D'>(initial?.correctAnswer ?? 'A')
+  const [difficulty, setDifficulty] = useState<string>(initial?.difficulty ?? 'normal')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
@@ -205,6 +223,7 @@ function QuestionDialog({
         optionC: optionC.trim(),
         optionD: optionD.trim(),
         correctAnswer,
+        difficulty: difficulty as any,
       }, initial?.id)
       onClose()
     } finally { setLoading(false) }
@@ -253,6 +272,17 @@ function QuestionDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="grid gap-1.5">
+            <Label>Độ khó</Label>
+            <Select value={difficulty} onValueChange={(v) => setDifficulty(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="easy">Dễ</SelectItem>
+                <SelectItem value="normal">Bình thường</SelectItem>
+                <SelectItem value="hard">Khó</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>Hủy</Button>
@@ -276,13 +306,13 @@ function BulkQuestionDialog({
   onSave: (questions: CreateQuestionDto[]) => Promise<void>
 }) {
   const [rows, setRows] = useState<CreateQuestionDto[]>([
-    { content: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A' },
+    { content: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', difficulty: 'normal' },
   ])
   const [loading, setLoading] = useState(false)
 
-  const addRow = () => setRows((prev) => [...prev, { content: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A' }])
+  const addRow = () => setRows((prev) => [...prev, { content: '', optionA: '', optionB: '', optionC: '', optionD: '', correctAnswer: 'A', difficulty: 'normal' }])
   const removeRow = (idx: number) => setRows((prev) => prev.filter((_, i) => i !== idx))
-  const updateRow = (idx: number, field: keyof CreateQuestionDto, value: string) =>
+  const updateRow = (idx: number, field: keyof CreateQuestionDto | 'difficulty', value: string) =>
     setRows((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
 
   const handleSubmit = async () => {
@@ -322,15 +352,25 @@ function BulkQuestionDialog({
                   <Input value={row.optionC} onChange={(e) => updateRow(idx, 'optionC', e.target.value)} placeholder="Đáp án C" />
                   <Input value={row.optionD} onChange={(e) => updateRow(idx, 'optionD', e.target.value)} placeholder="Đáp án D" />
                 </div>
-                <Select value={row.correctAnswer} onValueChange={(v) => updateRow(idx, 'correctAnswer', v)}>
-                  <SelectTrigger className="w-32"><SelectValue placeholder="Đáp án đúng" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">A</SelectItem>
-                    <SelectItem value="B">B</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
-                    <SelectItem value="D">D</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2 items-center">
+                  <Select value={row.correctAnswer} onValueChange={(v) => updateRow(idx, 'correctAnswer', v)}>
+                    <SelectTrigger className="w-32"><SelectValue placeholder="Đáp án đúng" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">A</SelectItem>
+                      <SelectItem value="B">B</SelectItem>
+                      <SelectItem value="C">C</SelectItem>
+                      <SelectItem value="D">D</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={row.difficulty ?? 'normal'} onValueChange={(v) => updateRow(idx, 'difficulty', v)}>
+                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Dễ</SelectItem>
+                      <SelectItem value="normal">Bình thường</SelectItem>
+                      <SelectItem value="hard">Khó</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -369,6 +409,9 @@ function QuestionItem({
           <span className="text-muted-foreground mr-1">Câu {index + 1}:</span>
           {question.content}
         </p>
+        <div className="ml-2">
+          <Badge variant="outline" className="text-xs">{question.difficulty ?? 'normal'}</Badge>
+        </div>
         {!question.isDeleted && (
           <div className="flex gap-1 shrink-0">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(question)}>
@@ -411,7 +454,7 @@ export function ExamDetailPanel({
   const [bulkOpen, setBulkOpen] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean; title: string; description: string; onConfirm: () => Promise<void>
-  }>({ open: false, title: '', description: '', onConfirm: async () => {} })
+  }>({ open: false, title: '', description: '', onConfirm: async () => { } })
 
   const loadDetail = async () => {
     setLoadingDetail(true)
@@ -421,6 +464,13 @@ export function ExamDetailPanel({
     } catch { /* interceptor */ }
     finally { setLoadingDetail(false) }
   }
+
+  const easyCount = detail?.questions.filter((q) => !q.isDeleted && q.difficulty === 'easy').length ?? 0
+  const normalCount = detail?.questions.filter((q) => !q.isDeleted && q.difficulty === 'normal').length ?? 0
+  const hardCount = detail?.questions.filter((q) => !q.isDeleted && q.difficulty === 'hard').length ?? 0
+  const reqEasy = (detail?.numEasy ?? exam.numEasy) ?? 0
+  const reqNormal = (detail?.numNormal ?? exam.numNormal) ?? 0
+  const reqHard = (detail?.numHard ?? exam.numHard) ?? 0
 
   const handleToggle = (isOpen: boolean) => {
     setOpen(isOpen)
@@ -502,6 +552,11 @@ export function ExamDetailPanel({
                     <span className="flex items-center gap-1"><Percent className="h-3 w-3" />{exam.passPercent}% đạt</span>
                     <span className="flex items-center gap-1"><CalendarClock className="h-3 w-3" />{exam.retryAfterDays} ngày chờ</span>
                     {exam._count && <span>{exam._count.questions} câu trong ngân hàng</span>}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span> Dễ {easyCount}/{reqEasy} </span>
+                      <span> Bình thường {normalCount}/{reqNormal} </span>
+                      <span> Khó {hardCount}/{reqHard} </span>
+                    </div>
                   </div>
                 </div>
                 <StatusBadge status={exam.status} />

@@ -43,14 +43,14 @@ export default async function Home() {
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="mb-2 text-3xl font-bold">50,000+</h3>
+              <h3 className="mb-2 text-3xl font-bold">50+</h3>
               <p className="text-muted-foreground">Học viên tích cực</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Award className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="mb-2 text-3xl font-bold">500+</h3>
+              <h3 className="mb-2 text-3xl font-bold">10+</h3>
               <p className="text-muted-foreground">Khóa học chất lượng</p>
             </div>
             <div className="flex flex-col items-center text-center">

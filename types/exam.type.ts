@@ -8,6 +8,9 @@ export interface Exam {
   name: string
   passPercent: number
   retryAfterDays: number
+  numEasy: number,
+  numNormal: number,
+  numHard: number,
   questionCount: number
   duration: number
   status: LessonStatus
@@ -26,6 +29,7 @@ export interface ExamQuestion {
   optionC: string
   optionD: string
   correctAnswer: 'A' | 'B' | 'C' | 'D'
+  difficulty?: 'easy' | 'normal' | 'hard'
   isDeleted: boolean
   createdAt?: string
 }
@@ -45,6 +49,9 @@ export interface ExamInfo {
   passPercent: number
   duration: number
   questionCount: number
+  numEasy?: number
+  numNormal?: number
+  numHard?: number
   totalQuestions: number
   courseName: string
   hasPassed: boolean
@@ -157,6 +164,9 @@ export interface CreateExamDto {
   retryAfterDays: number
   questionCount: number
   duration: number
+  numEasy: number
+  numNormal: number
+  numHard: number
 }
 
 export interface UpdateExamDto {
@@ -165,6 +175,9 @@ export interface UpdateExamDto {
   retryAfterDays?: number
   questionCount?: number
   duration?: number
+  numEasy?: number
+  numNormal?: number
+  numHard?: number
 }
 
 export interface CreateQuestionDto {
@@ -174,6 +187,7 @@ export interface CreateQuestionDto {
   optionC: string
   optionD: string
   correctAnswer: 'A' | 'B' | 'C' | 'D'
+  difficulty?: 'easy' | 'normal' | 'hard'
 }
 
 export interface UpdateQuestionDto {
@@ -183,6 +197,7 @@ export interface UpdateQuestionDto {
   optionC?: string
   optionD?: string
   correctAnswer?: 'A' | 'B' | 'C' | 'D'
+  difficulty?: 'easy' | 'normal' | 'hard'
 }
 
 export interface SubmitAnswerDto {

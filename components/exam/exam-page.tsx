@@ -57,7 +57,7 @@ export function ExamInfoCard({
     const sdk = SDK.getInstance()
     sdk.getExamInfo(examId)
       .then((res) => setInfo(res.data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false))
   }, [examId])
 
@@ -97,7 +97,12 @@ export function ExamInfoCard({
           </div>
           <div className="flex items-center gap-2">
             <FileQuestion className="h-4 w-4 text-muted-foreground" />
-            <span>Số câu: <strong>{info.questionCount}</strong></span>
+            <span>
+              Số câu: <strong>{typeof info.numEasy !== 'undefined' || typeof info.numNormal !== 'undefined' || typeof info.numHard !== 'undefined' ? (
+                <span>Dễ {info.numEasy ?? 0} / Thường {info.numNormal ?? 0} / Khó {info.numHard ?? 0}</span>
+              ) : null}</strong>
+
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-muted-foreground" />
@@ -332,15 +337,13 @@ export function ExamTaker({
                     <button
                       key={letter}
                       onClick={() => selectAnswer(letter)}
-                      className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                        isSelected
-                          ? 'border-primary bg-primary/10 font-medium'
-                          : 'hover:bg-muted/50'
-                      }`}
+                      className={`w-full rounded-lg border p-3 text-left transition-colors ${isSelected
+                        ? 'border-primary bg-primary/10 font-medium'
+                        : 'hover:bg-muted/50'
+                        }`}
                     >
-                      <span className={`mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${
-                        isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
+                      <span className={`mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                        }`}>
                         {letter}
                       </span>
                       {text}
@@ -386,13 +389,12 @@ export function ExamTaker({
                     <button
                       key={q.questionId}
                       onClick={() => setCurrentIdx(idx)}
-                      className={`relative flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
-                        isCurrent
-                          ? 'bg-primary text-primary-foreground'
-                          : isAnswered
+                      className={`relative flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${isCurrent
+                        ? 'bg-primary text-primary-foreground'
+                        : isAnswered
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-muted hover:bg-muted/80'
-                      }`}
+                        }`}
                     >
                       {idx + 1}
                       {isFlagged && (
@@ -651,7 +653,7 @@ export function ExamHistoryView({
     const sdk = SDK.getInstance()
     sdk.getExamHistory(examId)
       .then((res) => setHistory(res.data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false))
   }, [examId])
 
