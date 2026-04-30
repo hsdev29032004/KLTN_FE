@@ -417,9 +417,6 @@ function QuestionItem({
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(question)}>
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(question)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         )}
         {question.isDeleted && <Badge variant="outline" className="text-xs bg-red-50 text-red-500">Đã xóa</Badge>}
