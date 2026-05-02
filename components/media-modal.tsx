@@ -7,6 +7,16 @@ import Hls from "hls.js"
 
 type MediaType = "img" | "pdf" | "video"
 
+const CLOUD_BASE = process.env.NEXT_PUBLIC_CLOUD_URL ?? "http://localhost:3002"
+
+function getPdfSource(u: string) {
+  if (!u) return ""
+  if (u.startsWith("blob:")) return u
+  if (/^https?:\/\//i.test(u)) return u
+  if (u.startsWith("/")) return `${CLOUD_BASE}${u}`
+  return `${CLOUD_BASE}/api/pdfs/${u}`
+}
+
 interface MediaModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -98,6 +108,13 @@ export default function MediaModal({ open, onOpenChange, type, url, encryptUrl, 
               {type === "video" && (
                 // Dùng callback ref thay vì useRef thông thường
                 <video ref={videoRef} controls className="w-full max-h-[80vh] bg-black" />
+              )}
+              {type === "pdf" && (
+                <iframe
+                  src={getPdfSource(url)}
+                  title={title ?? "PDF Preview"}
+                  className="w-full h-[80vh] border-0"
+                />
               )}
             </div>
           </div>

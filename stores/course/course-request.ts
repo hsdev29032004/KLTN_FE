@@ -189,6 +189,25 @@ export class CourseRequest extends Base {
       method: 'DELETE',
     });
   }
+
+  // ── Cloud Upload ─────────────────────────────────────────────────────────
+
+  async uploadPdf(file: File): Promise<string> {
+    const cloudBase = process.env.NEXT_PUBLIC_CLOUD_URL ?? 'http://localhost:3002';
+    const formData = new FormData();
+    formData.append('pdf', file);
+    const res = await fetch(`${cloudBase}/api/pdfs`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any).message ?? 'Upload thất bại');
+    }
+    const data = await res.json();
+    return data.lessonId;
+  }
 }
 
 export const courseRequest = new CourseRequest();

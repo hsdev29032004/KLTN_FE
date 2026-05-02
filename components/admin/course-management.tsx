@@ -361,7 +361,7 @@ function CourseDetailDialog({
   }>({ open: false, type: '', url: '', title: '' });
 
   const handleViewMaterial = async (material: Material) => {
-    if (material.type !== 'img' && material.type !== 'video') {
+    if (material.type !== 'img' && material.type !== 'video' && material.type !== 'pdf') {
       try {
         const res: any = await courseStore.fetchMaterialUrl(material.id);
         const payload = res?.payload ?? res;

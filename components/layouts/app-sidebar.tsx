@@ -49,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           })),
         );
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // Fetch conversations
     SDK.getInstance()
@@ -62,7 +62,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           })),
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [authStore.user?.id]);
 
   const data = {
@@ -87,13 +87,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
       {
         title: 'Quản lý khóa học',
-        url: '/lecturer/courses',
+        url: '#',
         icon: BookOpen,
         items: courseItems,
       },
       {
         title: 'Đoạn chat',
-        url: '/lecturer/conversation',
+        url: '#',
         icon: SquareTerminal,
         items: chatItems,
       },

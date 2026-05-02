@@ -34,6 +34,16 @@ const MATERIAL_ICON: Record<string, string> = {
   word: "📄",
 };
 
+const CLOUD_BASE = process.env.NEXT_PUBLIC_CLOUD_URL ?? "http://localhost:3002";
+
+function getPdfSource(u: string) {
+  if (!u) return "";
+  if (u.startsWith("blob:")) return u;
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith("/")) return `${CLOUD_BASE}${u}`;
+  return `${CLOUD_BASE}/api/pdfs/${u}`;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MediaViewer({ media }: { media: ResolvedMedia | null }) {
@@ -61,6 +71,16 @@ function MediaViewer({ media }: { media: ResolvedMedia | null }) {
         src={media.url}
         alt={media.material.name}
         className="mx-auto max-h-[60vh] max-w-full object-contain"
+      />
+    );
+  }
+
+  if (media.material.type === "pdf") {
+    return (
+      <iframe
+        src={getPdfSource(media.url)}
+        title={media.material.name}
+        className="w-full h-[60vh] border-0 bg-white"
       />
     );
   }
@@ -178,7 +198,7 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
   // No exam gating — backend no longer enforces exam completion for viewing materials
 
   const handleSelect = async (lesson: Lesson, material: Material) => {
-    if (material.type === "pdf" || material.type === "word") {
+    if (material.type === "word") {
       window.open(material.url, "_blank");
       return;
     }

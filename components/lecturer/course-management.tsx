@@ -482,39 +482,6 @@ const FILE_LABEL: Record<MaterialType, string> = {
 };
 
 const CLOUD_BASE = process.env.NEXT_PUBLIC_CLOUD_URL ?? 'http://localhost:3002';
-const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? '';
-
-async function uploadVideoToCloud(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('video', file);
-  const res = await fetch(`${CLOUD_BASE}/api/videos`, {
-    method: 'POST',
-    body: formData,
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).message ?? 'Upload thất bại');
-  }
-  const data = await res.json();
-  return data.lessonId;
-}
-
-async function uploadFileToBackend(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await fetch(`${BACKEND_BASE}/api/upload`, {
-    method: 'POST',
-    body: formData,
-    credentials: 'include',
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).message ?? 'Upload thất bại');
-  }
-  const data = await res.json();
-  return data.url ?? data.data?.url;
-}
 
 function MaterialDialog({
   open,
@@ -600,6 +567,14 @@ function MaterialDialog({
     return `${CLOUD_BASE}/api/videos/${u}/index.m3u8`;
   };
 
+  const getPdfSource = (u: string) => {
+    if (!u) return '';
+    if (u.startsWith('blob:')) return u;
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.startsWith('/')) return `${CLOUD_BASE}${u}`;
+    return `${CLOUD_BASE}/api/pdfs/${u}`;
+  };
+
   const initHls = useCallback((video: HTMLVideoElement | null, source: string) => {
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -656,14 +631,20 @@ function MaterialDialog({
     } else {
       // If user selected a new file, upload it. Otherwise, if editing an existing material, allow updating metadata without re-upload.
       if (file) {
-        const form = new FormData();
-        form.append('file', file);
-        form.append('name', name.trim());
-        form.append('type', type);
-        form.append('isPreview', String(isPreview));
         setUploading(true);
         try {
-          await onSave(form, initial?.id);
+          if (type === 'pdf') {
+            const sdk = SDK.getInstance();
+            const lessonId = await sdk.uploadPdf(file);
+            await onSave({ name: name.trim(), url: lessonId, type, isPreview }, initial?.id);
+          } else {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('name', name.trim());
+            form.append('type', type);
+            form.append('isPreview', String(isPreview));
+            await onSave(form, initial?.id);
+          }
           onClose();
           return;
         } catch (e: any) {
@@ -688,7 +669,6 @@ function MaterialDialog({
           setLoading(false);
         }
       }
-      toast.error('Vui lòng chọn file');
       return;
     }
     setLoading(true);
@@ -798,7 +778,7 @@ function MaterialDialog({
                     />
                   ) : type === 'pdf' ? (
                     <iframe
-                      src={previewUrl}
+                      src={getPdfSource(previewUrl)}
                       title={name}
                       className="w-full h-64 border rounded-md"
                     />
@@ -1130,7 +1110,7 @@ export function CourseManagement({
   // ── View Material ────────────────────────────────────────────────────────
 
   const handleView = async (material: Material) => {
-    if (material.type !== 'img' && material.type !== 'video') {
+    if (material.type !== 'img' && material.type !== 'video' && material.type !== 'pdf') {
       try {
         const res: any = await courseStore.fetchMaterialUrl(material.id);
         const payload = res?.payload ?? res;
