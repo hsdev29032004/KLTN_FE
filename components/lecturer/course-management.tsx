@@ -54,6 +54,7 @@ import { useRouter } from 'next/navigation';
 import type { CourseApproval } from '@/types/course.type';
 import { Textarea } from '@/components/ui/textarea';
 import { ExamDetailPanel, ExamDialog } from '@/components/lecturer/exam-management';
+import { TopicMultiSelect } from '@/components/common/topic-multi-select';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ interface CourseData {
   lessons: Lesson[];
   exams?: any[];
   approvals?: CourseApproval[];
+  courseTopics?: { topicId: string }[];
 }
 
 interface CourseManagementProps {
@@ -220,11 +222,28 @@ function EditCourseDialog({
   const [commissionRate, setCommissionRate] = useState(String(course.commissionRate ?? ''));
   const [thumbnail, setThumbnail] = useState(course.thumbnail);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [topicIds, setTopicIds] = useState<string[]>(
+    course.courseTopics?.map((ct) => ct.topicId) ?? [],
+  );
   const [contentParts, setContentParts] = useState<string[]>(
     course.content ? course.content.split('|') : [''],
   );
   const descRef = useRef<RichTextEditorRef>(null);
   const [loading, setLoading] = useState(false);
+
+  // Sync state whenever the dialog opens (in case course data updated since last mount)
+  useEffect(() => {
+    if (open) {
+      setName(course.name);
+      setPrice(String(course.price));
+      setCommissionRate(String(course.commissionRate ?? ''));
+      setThumbnail(course.thumbnail);
+      setThumbnailFile(null);
+      setTopicIds(course.courseTopics?.map((ct) => ct.topicId) ?? []);
+      setContentParts(course.content ? course.content.split('|') : ['']);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const addContentPart = () => setContentParts((prev) => [...prev, '']);
   const removeContentPart = (idx: number) =>
@@ -254,6 +273,7 @@ function EditCourseDialog({
         }
         form.append('content', content);
         form.append('description', description);
+        topicIds.forEach((id) => form.append('topicIds', id));
         res = await (sdk as any).updateCourse(course.id, form);
       } else {
         const payload: any = {
@@ -262,6 +282,7 @@ function EditCourseDialog({
           thumbnail: thumbnail.trim(),
           content,
           description,
+          topicIds,
         };
         if (commissionRate !== '') {
           const cr = Number(commissionRate);
@@ -360,6 +381,10 @@ function EditCourseDialog({
                 </div>
               ))}
             </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Chủ đề</Label>
+            <TopicMultiSelect value={topicIds} onChange={setTopicIds} />
           </div>
           <div className="grid gap-1.5">
             <Label>Mô tả</Label>

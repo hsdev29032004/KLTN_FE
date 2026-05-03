@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { RichTextEditor, RichTextEditorRef } from '@/components/common/rich-text-editor';
+import { TopicMultiSelect } from '@/components/common/topic-multi-select';
 import SDK from '@/stores/sdk';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -37,6 +38,7 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
   const [commissionRate, setCommissionRate] = useState('');
   const [thumbnail, setThumbnail] = useState('');
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [topicIds, setTopicIds] = useState<string[]>([]);
   const [contentParts, setContentParts] = useState<string[]>(['']);
   const descRef = useRef<RichTextEditorRef>(null);
   const [loading, setLoading] = useState(false);
@@ -75,6 +77,7 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
         form.append('commissionRate', String(crNum));
         form.append('content', content);
         form.append('description', description);
+        topicIds.forEach((id) => form.append('topicIds', id));
         res = await (sdk as any).createCourse(form);
       } else {
         res = await sdk.createCourse({
@@ -84,7 +87,8 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
           content,
           description,
           commissionRate: crNum,
-        });
+          ...(topicIds.length > 0 ? { topicIds } : {}),
+        } as any);
       }
       const data = (res as any).data || res;
       toast.success('Tạo khóa học thành công');
@@ -171,6 +175,11 @@ function CourseDialog({ open, onClose }: { open: boolean; onClose: () => void })
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>Chủ đề</Label>
+            <TopicMultiSelect value={topicIds} onChange={setTopicIds} />
           </div>
 
           <div className="grid gap-1.5">
