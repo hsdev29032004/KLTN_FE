@@ -84,7 +84,8 @@ interface CourseData {
   content?: string | null;
   description?: string | null;
   price: number;
-  commissionRate?: number;
+  commissionRate?: number | string | null;
+  newCommissionRate?: number | string | null;
   lessons: Lesson[];
   exams?: any[];
   approvals?: CourseApproval[];
@@ -325,6 +326,11 @@ function EditCourseDialog({
             <div className="grid gap-1.5">
               <Label>Tỷ lệ hoa hồng (%)</Label>
               <Input type="number" min={0} max={100} step="0.1" value={commissionRate} onChange={(e) => setCommissionRate(e.target.value)} />
+              {course.newCommissionRate != null && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                  Hoa hồng {course.newCommissionRate}% đang chờ admin duyệt
+                </p>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Thumbnail</Label>
@@ -1160,8 +1166,15 @@ export function CourseManagement({
 
   // ── Course actions ───────────────────────────────────────────────────────
 
-  const handleCourseSaved = (data: any) => {
-    setCourse((prev) => ({ ...prev, ...data }));
+  const handleCourseSaved = async (_data: any) => {
+    try {
+      const res = await sdk.getCourseBySlugOrId(course.id);
+      const fresh = (res as any).data || res;
+      setCourse((prev) => ({ ...prev, ...fresh }));
+      setApprovals(fresh.approvals ?? []);
+    } catch {
+      setCourse((prev) => ({ ...prev, ..._data }));
+    }
   };
 
   const handleDeleteCourse = () => {
@@ -1403,8 +1416,18 @@ export function CourseManagement({
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">{course.name}</h1>
             <StatusBadge status={course.status} />
-            {typeof course.commissionRate !== 'undefined' && (
-              <div className="text-sm text-muted-foreground">Hoa hồng: {course.commissionRate}%</div>
+            {course.commissionRate != null && (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span>Hoa hồng:</span>
+                <span className={course.newCommissionRate != null ? 'line-through opacity-60' : ''}>
+                  {course.commissionRate}%
+                </span>
+                {course.newCommissionRate != null && (
+                  <Badge variant="outline" className="text-yellow-600 border-yellow-400 text-xs">
+                    {course.newCommissionRate}% chờ duyệt
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
         </div>

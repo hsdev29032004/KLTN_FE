@@ -442,6 +442,19 @@ function CourseDetailDialog({
                 <p className="text-sm font-medium mt-1">
                   {formatCurrency(course.price)}
                 </p>
+                {course.commissionRate != null && (
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                    <span>Hoa hồng:</span>
+                    <span className={course.newCommissionRate != null ? 'line-through opacity-60' : ''}>
+                      {course.commissionRate}%
+                    </span>
+                    {course.newCommissionRate != null && (
+                      <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                        → {course.newCommissionRate}% (chờ duyệt)
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

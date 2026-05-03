@@ -62,6 +62,8 @@ export interface CourseListItem {
   star: string | number
   status: string
   studentCount: number
+  commissionRate?: string | number | null
+  newCommissionRate?: string | number | null
   createdAt: string
   user: UserSummary
   courseTopics: CourseTopic[]
@@ -101,6 +103,8 @@ export interface CourseDetailResponse {
   updatedAt: string
   deletedAt?: string | null
   publishedAt?: string | null
+  commissionRate?: string | number | null
+  newCommissionRate?: string | number | null
   user: UserSummary
   publisher?: UserSummary | null
   courseTopics: CourseTopic[]
