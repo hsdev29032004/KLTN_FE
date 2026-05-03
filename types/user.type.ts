@@ -90,3 +90,54 @@ export interface UserLoginResponse {
     user: User;
   };
 }
+
+export interface LecturerCourse {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnail: string | null;
+  price: number;
+  star: number;
+  studentCount: number;
+  _count: {
+    reviews: number;
+    lessons: number;
+  };
+}
+
+export interface LecturerStats {
+  totalCourses: number;
+  totalStudents: number;
+  totalReviews: number;
+  avgRating: number;
+}
+
+export interface LecturerProfile {
+  id: string;
+  fullName: string;
+  avatar: string | null;
+  slug: string;
+  introduce: string;
+  createdAt: string;
+  role: {
+    name: string;
+  };
+  stats: LecturerStats;
+  courses: LecturerCourse[];
+}
+
+export interface LecturerProfileResponse {
+  message: string;
+  data: LecturerProfile;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface LecturerProfileParams {
+  page?: number;
+  limit?: number;
+}

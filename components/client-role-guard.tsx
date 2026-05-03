@@ -20,10 +20,10 @@ function shouldRedirectClient(user: User | null, currentPath: string): boolean {
 
   if (
     roleName === 'User' &&
-    (currentPath.startsWith('/lecturer') || currentPath.startsWith('/admin'))
+    (currentPath.startsWith('/lecturer/') || currentPath === '/lecturer' || currentPath.startsWith('/admin'))
   ) return true;
 
-  if (roleName === 'Teacher' && !currentPath.startsWith('/lecturer')) return true;
+  if (roleName === 'Teacher' && !currentPath.startsWith('/lecturer/') && currentPath !== '/lecturer') return true;
 
   if (roleName === 'Admin' && !currentPath.startsWith('/admin')) return true;
 

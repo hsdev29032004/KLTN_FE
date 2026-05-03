@@ -1,6 +1,8 @@
 import {
   AdminUserListParams,
   AdminUserListResponse,
+  LecturerProfileParams,
+  LecturerProfileResponse,
   User,
 } from '@/types/user.type';
 import { Base } from '../base';
@@ -82,6 +84,16 @@ export class UserRequest extends Base {
     return this.request('/api/user/profile', {
       method: 'PATCH',
       data,
+    });
+  }
+
+  async getLecturerProfile(
+    slug: string,
+    params?: LecturerProfileParams,
+  ): Promise<LecturerProfileResponse> {
+    return this.request(`/api/user/profile/${slug}`, {
+      method: 'GET',
+      params,
     });
   }
 }
