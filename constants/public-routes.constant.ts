@@ -15,6 +15,7 @@ export const publicRoutes = [
   '/help',
   '/faqs',
   '/404',
-  '/search'
+  '/search',
+  '/lecturer-info'
   // ... other public routes
 ];

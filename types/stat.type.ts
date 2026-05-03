@@ -59,6 +59,44 @@ export interface TeacherRevenue {
   count: number;
 }
 
+export interface HomeCourse {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnail: string | null;
+  price: number;
+  star: number | string;
+  studentCount: number;
+  user: {
+    id: string;
+    fullName: string;
+    avatar: string | null;
+    slug: string;
+  };
+}
+
+export interface HomeTopicCourses {
+  topic: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  courses: HomeCourse[];
+}
+
+export interface HomeDashboardData {
+  stats: {
+    totalStudents: number;
+    totalPublishedCourses: number;
+  };
+  topicCourses: HomeTopicCourses[];
+}
+
+export interface HomeDashboardResponse {
+  message: string;
+  data: HomeDashboardData;
+}
+
 export interface CourseRevenue {
   course: {
     id: string;

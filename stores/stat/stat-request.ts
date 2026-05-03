@@ -1,4 +1,5 @@
 import { Base } from '../base';
+import { HomeDashboardResponse } from '@/types/stat.type';
 
 export class StatRequest extends Base {
   constructor(accessToken?: string, refreshToken?: string) {
@@ -54,6 +55,10 @@ export class StatRequest extends Base {
     params?: Record<string, string>,
   ): Promise<{ data: any }> {
     return this.request('/api/stat/courses', { method: 'GET', params });
+  }
+
+  async getHomeDashboard(): Promise<HomeDashboardResponse> {
+    return this.request('/api/stat/home', { method: 'GET' });
   }
 }
 
