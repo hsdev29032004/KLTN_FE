@@ -1252,12 +1252,19 @@ export function CourseManagement({
       description: `Bạn có chắc chắn muốn xóa bài học "${lesson.name}"?`,
       onConfirm: async () => {
         await sdk.deleteLesson(lesson.id);
-        setCourse((prev) => ({
-          ...prev,
-          lessons: prev.lessons.map((l) =>
-            l.id === lesson.id ? { ...l, status: 'outdated' } : l,
-          ),
-        }));
+        try {
+          const res = await sdk.getCourseBySlugOrId(course.id);
+          const fresh = (res as any).data || res;
+          setCourse((prev) => ({ ...prev, ...fresh }));
+          setApprovals(fresh.approvals ?? []);
+        } catch {
+          setCourse((prev) => ({
+            ...prev,
+            lessons: prev.lessons.map((l) =>
+              l.id === lesson.id ? { ...l, status: 'outdated' } : l,
+            ),
+          }));
+        }
         toast.success('Đã xóa bài học');
       },
     });
