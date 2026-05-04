@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 
 import { Course, ICourseReview, Lesson, CourseExam } from '@/types/course.type';
 import { Bank } from '@/types/bank.type';
+import { toast } from 'sonner';
 import { BankSelectionDialog } from '@/components/payment/bank-selection-dialog';
 import { useBankStore } from '@/stores/bank/bank-store';
 import { usePurchaseStore } from '@/stores/purchase/purchase-store';
@@ -156,13 +157,18 @@ export function CourseDetail({
   };
 
   const handleAddToCart = async () => {
-    if (!authStore.user || !isTrainee) {
-      // Guest or non-trainee: save to localStorage
-      cartStore.addToLocalCart(course.id);
-    } else {
-      // Trainee: save to server
-      await cartStore.addToCart([course.id]);
-      await cartStore.fetchCart();
+    try {
+      if (!authStore.user || !isTrainee) {
+        // Guest or non-trainee: save to localStorage
+        cartStore.addToLocalCart(course.id);
+      } else {
+        // Trainee: save to server
+        await cartStore.addToCart([course.id]);
+        await cartStore.fetchCart();
+      }
+      toast.success('Đã thêm khóa học vào giỏ hàng');
+    } catch {
+      /* interceptor */
     }
   };
 
