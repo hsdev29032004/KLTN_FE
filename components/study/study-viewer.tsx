@@ -268,7 +268,7 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
       return;
     }
 
-    if (material.type === "pdf" || material.type === "word") {
+    if (material.type === "word" || material.type === "other") {
       window.open(material.url, "_blank");
       return;
     }
