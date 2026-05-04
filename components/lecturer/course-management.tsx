@@ -544,6 +544,7 @@ function MaterialDialog({
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const hlsRef = useRef<Hls | null>(null);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
   const courseStore = useCourseStore();
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -636,6 +637,15 @@ function MaterialDialog({
       video.src = source;
     }
   }, []);
+
+  // Re-init HLS only when previewUrl changes, not on every render
+  useEffect(() => {
+    if (type === 'video' && previewUrl && videoPreviewRef.current) {
+      const source = getVideoSource(previewUrl);
+      initHls(videoPreviewRef.current, source);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl, type]);
 
   useEffect(() => {
     return () => {
@@ -807,12 +817,7 @@ function MaterialDialog({
                     />
                   ) : type === 'video' ? (
                     <video
-                      ref={(node) => {
-                        if (node) {
-                          const source = getVideoSource(previewUrl);
-                          initHls(node, source);
-                        }
-                      }}
+                      ref={videoPreviewRef}
                       controls
                       className="max-h-48 w-full rounded-md border"
                     />
