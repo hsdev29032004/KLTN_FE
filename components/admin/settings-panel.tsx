@@ -147,6 +147,7 @@ function BankDialog({
               value={form.bankNumber}
               onChange={handleChange('bankNumber')}
               placeholder="1032850000"
+              type='number'
             />
           </div>
           <div className="grid gap-1.5">
