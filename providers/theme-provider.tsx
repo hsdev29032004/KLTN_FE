@@ -25,7 +25,7 @@ export function ThemeProvider({
 function ThemeSync({ children }: { children: ReactNode }) {
   const { theme, setTheme } = useNextTheme()
   const [hydrated, setHydrated] = useState(false)
-  
+
   useEffect(() => {
     const cookieTheme = Cookies.get('theme')
     if (cookieTheme && cookieTheme !== theme) {
@@ -33,16 +33,16 @@ function ThemeSync({ children }: { children: ReactNode }) {
     }
     setHydrated(true)
   }, [])
-  
+
   useEffect(() => {
     if (hydrated && theme) {
-      Cookies.set('theme', theme, { 
+      Cookies.set('theme', theme, {
         expires: 365,
         path: '/',
-        sameSite: 'lax'
+        sameSite: 'none'
       })
     }
   }, [theme, hydrated])
-  
+
   return <>{children}</>
 }

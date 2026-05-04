@@ -11,7 +11,11 @@ interface TokenPayload {
 }
 
 // Redirect sang trang login và xóa cookies
-function redirectToLogin(request: NextRequest, pathname: string, search: string): NextResponse {
+function redirectToLogin(
+  request: NextRequest,
+  pathname: string,
+  search: string,
+): NextResponse {
   const loginResponse = NextResponse.redirect(new URL('/login', request.url));
   loginResponse.cookies.delete('access_token');
   loginResponse.cookies.delete('refresh_token');
@@ -69,22 +73,30 @@ export async function authMiddleware(request: NextRequest) {
 
       // Parse và set cookies vào NextResponse
       if (setCookieHeader) {
-        const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+        const cookies = Array.isArray(setCookieHeader)
+          ? setCookieHeader
+          : [setCookieHeader];
 
         cookies.forEach((cookie: string) => {
           // Parse cookie string: "access_token=value; HttpOnly; Path=/; Max-Age=300"
-          const [nameValue, ...attributes] = cookie.split(';').map(s => s.trim());
+          const [nameValue, ...attributes] = cookie
+            .split(';')
+            .map((s) => s.trim());
           const [name, value] = nameValue.split('=');
 
           // Extract attributes
           const cookieOptions: any = {
-            httpOnly: attributes.some(attr => attr.toLowerCase() === 'httponly'),
-            secure: attributes.some(attr => attr.toLowerCase() === 'secure'),
-            sameSite: 'lax' as const,
+            httpOnly: attributes.some(
+              (attr) => attr.toLowerCase() === 'httponly',
+            ),
+            secure: false,
+            sameSite: 'none' as const,
           };
 
           // Extract maxAge
-          const maxAgeAttr = attributes.find(attr => attr.toLowerCase().startsWith('max-age='));
+          const maxAgeAttr = attributes.find((attr) =>
+            attr.toLowerCase().startsWith('max-age='),
+          );
           if (maxAgeAttr) {
             // NestJS set maxAge in milliseconds, Next.js needs seconds
             cookieOptions.maxAge = parseInt(maxAgeAttr.split('=')[1]);
@@ -98,7 +110,8 @@ export async function authMiddleware(request: NextRequest) {
       nextResponse.headers.set('x-search', search);
       return nextResponse;
     } catch (error) {
-      if (!isPublicRoute(pathname)) return redirectToLogin(request, pathname, search);
+      if (!isPublicRoute(pathname))
+        return redirectToLogin(request, pathname, search);
     }
   }
 
