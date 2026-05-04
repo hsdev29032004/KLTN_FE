@@ -28,7 +28,7 @@ export function CourseCard({ course, href }: CourseCardProps) {
 
   return (
     <Link href={href || `/courses/${course.slug}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg cursor-pointer h-full">
+      <Card className="group overflow-hidden transition-all hover:shadow-lg cursor-pointer h-full pt-0">
         <div className="relative aspect-video overflow-hidden">
           <img
             src={course.thumbnail}
