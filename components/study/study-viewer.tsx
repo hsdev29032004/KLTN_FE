@@ -98,7 +98,7 @@ function MediaViewer({ media }: { media: ResolvedMedia | null }) {
 interface ContentListProps {
   content: ContentItem[];
   examInfoMap: Record<string, ExamInfo>;
-  lockedLessonIds: Set<string>;
+  lockedItemIds: Set<string>;
   selectedMaterialId: string | null;
   loading: boolean;
   onSelectMaterial: (lesson: Lesson, material: Material) => void;
@@ -108,7 +108,7 @@ interface ContentListProps {
 function ContentList({
   content,
   examInfoMap,
-  lockedLessonIds,
+  lockedItemIds,
   selectedMaterialId,
   loading,
   onSelectMaterial,
@@ -123,12 +123,17 @@ function ContentList({
         if (item._type === "exam") {
           const info = examInfoMap[item.id];
           const passed = info?.hasPassed ?? false;
+          const isLocked = lockedItemIds.has(item.id);
           return (
-            <div key={item.id} className="rounded-lg border p-3 space-y-2">
+            <div key={item.id} className={`rounded-lg border p-3 space-y-2 ${isLocked ? "opacity-50 pointer-events-none select-none" : ""}`}>
               <div className="flex items-center gap-2">
-                <FileQuestion className="h-4 w-4 text-blue-500" />
+                {isLocked
+                  ? <Lock className="h-4 w-4 text-muted-foreground" />
+                  : <FileQuestion className="h-4 w-4 text-blue-500" />}
                 <span className="font-semibold text-sm flex-1">{item.name}</span>
-                {passed ? (
+                {isLocked ? (
+                  <Badge variant="outline" className="text-xs">🔒 Bị khóa</Badge>
+                ) : passed ? (
                   <Badge variant="default" className="text-xs bg-green-100 text-green-700 border-green-300">
                     <CheckCircle2 className="mr-1 h-3 w-3" /> Đã đạt
                   </Badge>
@@ -141,20 +146,24 @@ function ContentList({
                 <span>{item.duration} phút</span>
                 <span>Đạt: {item.passPercent}%</span>
               </div>
-              <Button
-                size="sm"
-                variant={passed ? "outline" : "default"}
-                className="w-full"
-                onClick={() => onGoToExam(item.id)}
-              >
-                {passed ? "Xem lại" : "Làm bài thi"}
-              </Button>
+              {isLocked ? (
+                <p className="text-xs text-muted-foreground">🔒 Hoàn thành đề thi trước để mở khóa</p>
+              ) : (
+                <Button
+                  size="sm"
+                  variant={passed ? "outline" : "default"}
+                  className="w-full"
+                  onClick={() => onGoToExam(item.id)}
+                >
+                  {passed ? "Xem lại" : "Làm bài thi"}
+                </Button>
+              )}
             </div>
           );
         }
 
         // Lesson
-        const isLocked = lockedLessonIds.has(item.id);
+        const isLocked = lockedItemIds.has(item.id);
         return (
           <div key={item.id} className={isLocked ? "opacity-60" : ""}>
             <div className="flex items-center gap-2 mb-2">
@@ -237,23 +246,24 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
     });
   }, [exams]);
 
-  // Compute locked lessons (lessons after an unpassed exam)
-  const lockedLessonIds = useMemo(() => {
+  // Compute locked items: everything AFTER an unpassed exam (lessons and subsequent exams)
+  const lockedItemIds = useMemo(() => {
     const locked = new Set<string>();
     let blocked = false;
     for (const item of courseContent) {
+      if (blocked) {
+        locked.add(item.id);
+      }
       if (item._type === "exam") {
         const info = examInfoMap[item.id];
         if (!info?.hasPassed) blocked = true;
-      } else if (blocked) {
-        locked.add(item.id);
       }
     }
     return locked;
   }, [courseContent, examInfoMap]);
 
   const handleSelect = async (lesson: Lesson, material: Material) => {
-    if (lockedLessonIds.has(lesson.id)) {
+    if (lockedItemIds.has(lesson.id)) {
       toast.error("Bạn cần hoàn thành đề thi trước khi xem nội dung này");
       return;
     }
@@ -287,6 +297,10 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
   };
 
   const handleGoToExam = (examId: string) => {
+    if (lockedItemIds.has(examId)) {
+      toast.error('Hoàn thành đề thi trước để mở khóa đề thi này');
+      return;
+    }
     const slug = (courseDetail as any).slug ?? courseDetail.id;
     router.push(`/study/exam/${examId}?course=${slug}`);
   };
@@ -308,7 +322,7 @@ export default function StudyViewer({ courseDetail }: { courseDetail: CourseDeta
         <ContentList
           content={courseContent}
           examInfoMap={examInfoMap}
-          lockedLessonIds={lockedLessonIds}
+          lockedItemIds={lockedItemIds}
           selectedMaterialId={selectedMaterialId}
           loading={loading}
           onSelectMaterial={handleSelect}
