@@ -117,6 +117,7 @@ export function ExamDialog({
     if (!name.trim()) { toast.error('Tên đề thi không được trống'); return }
     if (Number(passPercent) < 1 || Number(passPercent) > 100) { toast.error('Phần trăm đạt phải từ 1-100'); return }
     if (Number(questionCount) < 1) { toast.error('Số câu hỏi phải lớn hơn 0'); return }
+    if (Number(retryAfterDays) < 0) { toast.error('Số ngày chờ thi lại phải lớn hơn hoặc bằng 0'); return }
     if (Number(duration) < 1) { toast.error('Thời gian làm bài phải lớn hơn 0'); return }
     if (Number(numEasy) < 0 || Number(numNormal) < 0 || Number(numHard) < 0) { toast.error('Số câu theo độ khó không được âm'); return }
 
