@@ -106,6 +106,8 @@ interface CourseDetail {
   thumbnail: string;
   content?: string | null;
   description?: string | null;
+  commissionRate?: number | null;
+  newCommissionRate?: number | null;
   price: number;
   lessons: Lesson[];
   exams?: ExamItem[];
