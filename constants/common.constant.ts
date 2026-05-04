@@ -27,7 +27,7 @@ export const TOKEN = {
 
 export const COOKIE_SETTINGS = {
   httpOnly: true,
-  secure: false,
+  secure: true,
   sameSite: 'none' as const,
 };
 

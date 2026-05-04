@@ -89,7 +89,7 @@ export async function authMiddleware(request: NextRequest) {
             httpOnly: attributes.some(
               (attr) => attr.toLowerCase() === 'httponly',
             ),
-            secure: false,
+            secure: true,
             sameSite: 'none' as const,
           };
 
