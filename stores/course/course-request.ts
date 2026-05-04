@@ -208,6 +208,23 @@ export class CourseRequest extends Base {
     const data = await res.json();
     return data.lessonId;
   }
+
+  async uploadVideo(file: File): Promise<string> {
+    const cloudBase = process.env.NEXT_PUBLIC_CLOUD_URL ?? 'http://localhost:3002';
+    const formData = new FormData();
+    formData.append('video', file);
+    const res = await fetch(`${cloudBase}/api/videos`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any).message ?? 'Upload video thất bại');
+    }
+    const data = await res.json();
+    return data.lessonId;
+  }
 }
 
 export const courseRequest = new CourseRequest();

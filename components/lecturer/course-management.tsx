@@ -594,6 +594,7 @@ function MaterialDialog({
 
   const getVideoSource = (u: string) => {
     if (!u) return '';
+    if (u.startsWith('blob:') || u.startsWith('data:')) return u;
     if (/^https?:\/\//i.test(u) || u.startsWith('/')) return u;
     return `${CLOUD_BASE}/api/videos/${u}/index.m3u8`;
   };
@@ -613,6 +614,11 @@ function MaterialDialog({
     }
     if (!video || !source) return;
     videoElRef.current = video;
+    // Blob/data URLs are local files — play natively without HLS
+    if (source.startsWith('blob:') || source.startsWith('data:')) {
+      video.src = source;
+      return;
+    }
     if (Hls.isSupported()) {
       const hls = new Hls({
         xhrSetup(xhr) {
@@ -664,9 +670,12 @@ function MaterialDialog({
       if (file) {
         setUploading(true);
         try {
+          const sdk = SDK.getInstance();
           if (type === 'pdf') {
-            const sdk = SDK.getInstance();
             const lessonId = await sdk.uploadPdf(file);
+            await onSave({ name: name.trim(), url: lessonId, type, isPreview }, initial?.id);
+          } else if (type === 'video') {
+            const lessonId = await sdk.uploadVideo(file);
             await onSave({ name: name.trim(), url: lessonId, type, isPreview }, initial?.id);
           } else {
             const form = new FormData();
