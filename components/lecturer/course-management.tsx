@@ -675,6 +675,34 @@ function MaterialDialog({
         toast.error('Vui lòng nhập đường dẫn');
         return;
       }
+
+      const isValidUrl = (url: string): boolean => {
+        try {
+          const parsed = new URL(url);
+          if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+
+          const hostname = parsed.hostname;
+
+          // Phải có ít nhất 1 dấu chấm (ví dụ: google.com)
+          if (!hostname.includes('.')) return false;
+
+          // Không được kết thúc bằng dấu chấm
+          if (hostname.endsWith('.')) return false;
+
+          // TLD phải có ít nhất 2 ký tự
+          const parts = hostname.split('.');
+          const tld = parts[parts.length - 1];
+          if (tld.length < 2) return false;
+
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      if (!isValidUrl(finalUrl)) {
+        toast.error('Đường dẫn không hợp lệ.');
+        return;
+      }
     } else {
       // If user selected a new file, upload it. Otherwise, if editing an existing material, allow updating metadata without re-upload.
       if (file) {
